@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="date.format.js"></script>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<style>
+body {
+    font-family : Arial;
+}
+
+#error {
+color: red;
+}
+
+.counters_row td {
+    font-size:24px;
+    text-align: right;
+    padding-left: 1em;
+    padding-bottom: 0.2em;
+    padding-top: 0.2em;
+    
+}
+
+.counters_row td span.legend {
+    font-size:14px;
+}
+
+tr#input {
+background-color:#FFD;
+}
+tr#storage {
+background-color:#DFD;
+}
+tr.forwarder {
+background-color:#DDF;
+}
+
+
+#last_queries {
+    border-collase: collapse;
+}
+
+#last_queries th {
+    font-size: 12px;
+}
+
+#last_queries td {
+    font-size:12px;
+}
+
+#last_queries tr.row_even td {
+    background-color:#EEF;
+}
+#last_queries tr.row_odd td {
+    background-color:#CCF;
+}
+
+
+
+</style>
+</head>
+<body>
+    <h3 style="text-align:center">WT1 Monitoring interface</h3>
+    
+    <div id="error"></div>
+
+    <table id="counters">
+        <tr id="input">
+            <td>Input</td>
+            <td>
+                <table>
+                    <tr class="counters_row">
+                        <td id="received"></td>
+                        <td id="events_rate"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr id="storage">
+            <td>Storage</td>
+            <td>
+                <table>
+                    <tr class="counters_row">
+                        <td id="queued"></td>
+                        <td id="lost"></td>
+                        <td id="processed"></td>
+                        <td id="processing_failed"></td>
+                        <td id="saved"></td>
+                    </tr>
+                    <tr class="counters_row">
+                        <td id="created_files"></td>
+                        <td id="saved_input_size"></td>
+                        <td id="saved_gz_size"></td>
+                    </tr>
+                </table>
+            </td>                  
+        </tr>
+    </table>
+    
+    <hr />
+
+    <table id="last_queries">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Source Addr</th><th>Visitor id</th><th>Page</th>
+                <th>Referer</th><th>Evt. type</th><th>Visitor params</th>
+                <th>Session params</th><th>Event params</th><th>User-Agent</th>
+                <th>Sizes</th><th>Br. Lang</th><th>TZ</th></tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+    
+    var prevNb = 0;
+    var prevDate = 0;
+    
+    function drawLastQueries(data) {
+    	var html = "";
+    	for (var i in data) {
+    	    var line = data[i];
+    	    html += "<tr class=\"row_" + (i%2 == 0 ? "even" : "odd") + "\">";
+    	    html += "<td>" + new Date(line.now).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
+    	    html += "<td>" + line.origAddress + "</td>";
+    	    html += "<td>" + line.visitorCookieValue + "</td>";
+    	    html += "<td>" + (line.page ? line.page : "-") + "</td>";
+    	    html += "<td>" + (line.referer ? line.referer : "-") + "</td>";
+    	    html += "<td>" + (line.type ? line.type : "-") + "</td>";
+    	    html += "<td>" + (line.visitorParamsCookieValue ? line.visitorParamsCookieValue : "-")+ "</td>";
+    	    html += "<td>" + (line.sessionParamsCookieValue ? line.sessionParamsCookieValue : "-") + "</td>";
+    	    html += "<td>" + (line.eventParams ? line.eventParams : "-") + "</td>";
+    	    html += "<td>" + line.ua + "</td>";
+    	    html += "<td>B=" + line.browserWidth + "x" + line.browserHeight + " S=" + line.screenWidth + "x" + line.screenHeight + "</td>";
+    	    html += "<td>" + line.browserLanguage + "</td>";
+    	    html += "<td>" + line.tzOffset + "</td>";
+    	}
+    	$("#last_queries tbody").html(html);
+    }
+    
+    function drawCounters(data) {
+        $("#received").html(data.receivedEvents + "<br /><span class=\"legend\">events received</span>");
+        
+        var date = new Date().getTime();
+        if (prevNb == 0) {
+            $("#events_rate").html("N/A"+ "<br /><span class=\"legend\">events/s</span>");
+        } else {
+            var rate = (data.receivedEvents - prevNb)/(date-prevDate)*1000;
+            $("#events_rate").html(rate.toFixed(0) + "<br /><span class=\"legend\">events/s</span>");
+        }
+        prevDate = date;
+        prevNb = data.receivedEvents;
+        
+        $("#queued").html(data.storage.queuedEvents+ "<br /><span class=\"legend\">events queued</span>");
+        $("#lost").html(data.storage.lostInQueueEvents+ "<br /><span class=\"legend\">events lost in queue</span>");
+        $("#processed").html(data.storage.processedEvents+ "<br /><span class=\"legend\">events processed</span>");
+        $("#processing_failed").html(data.storage.processFailedEvents+ "<br /><span class=\"legend\">events processing failed</span>");
+        
+        $("#saved").html(data.savedEvents+ "<br /><span class=\"legend\">events saved</span>");
+        $("#created_files").html(data.createdFiles+ "<br /><span class=\"legend\">files created</span>");
+        $("#saved_input_size").html((data.savedEventsInputSize/(1024*1024)).toFixed(1)+ "<br /><span class=\"legend\">MB of input data written</span>");
+        $("#saved_gz_size").html((data.savedEventsGZippedSize/(1024*1024)).toFixed(1)+ "<br /><span class=\"legend\">MB of compressed data written</span>");
+
+        $("#counters tr.forwarder").remove();
+        
+        for (var i in data.forwarders) {
+            var fd = data.forwarders[i];
+            var html = "<tr class=\"forwarder\"><td>Forwarder " + fd.name + "</td><td><table><tr class=\"counters_row\">";
+            html += "<td>" + fd.queuedEvents + "<br /><span class=\"legend\">events queued</span></td>";
+            html += "<td>" + fd.lostInQueueEvents + "<br /><span class=\"legend\">events lost in queue</span></td>";
+            html += "<td>" + fd.processedEvents + "<br /><span class=\"legend\">events processed</span></td>";
+            html += "<td>" + fd.processFailedEvents + "<br /><span class=\"legend\">events processing failed</span></td>";
+            html += "</tr></table></td></tr>";
+            $("#counters").append($(html));
+        }
+    }
+    
+    function refresh() {
+    	$.ajax({
+    	   url : "debug",
+    	   success : function(data) {
+    	       $("#error").html("");
+    	       drawLastQueries(data.lastRequests);
+    	       drawCounters(data.stats);
+    	       setTimeout(refresh, 1500);
+    	   },
+    	   error : function(data) {
+    	       $("#error").html("Failed to get data: " + data);
+    	       setTimeout(refresh, 1500);
+    	   }
+    	});
+    }
+  
+  	$(document).ready(function() {
+  		refresh();
+  	});
+  </script>
+
+</body>
+</html>

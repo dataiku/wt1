@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?><web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.5" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+	<!-- Tracking servlets -->
+	<servlet>
+		<servlet-name>pixel</servlet-name>
+		<servlet-class>com.dataiku.wt1.controllers.PixelServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>pixel</servlet-name>
+		<url-pattern>/p.gif</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>events</servlet-name>
+		<servlet-class>com.dataiku.wt1.controllers.APIServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>events</servlet-name>
+		<url-pattern>/events</url-pattern>
+	</servlet-mapping>
+	
+	<!-- Debugging Console -->
+	<servlet>
+		<servlet-name>debug</servlet-name>
+		<servlet-class>com.dataiku.wt1.controllers.DebuggingServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>debug</servlet-name>
+		<url-pattern>/debug</url-pattern>
+	</servlet-mapping>
+	
+	<!-- Test -->
+	<servlet>
+		<servlet-name>nothing</servlet-name>
+		<servlet-class>com.dataiku.wt1.controllers.NoopServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>nothing</servlet-name>
+		<url-pattern>/nothing</url-pattern>
+	</servlet-mapping>
+
+
+    <listener>
+        <listener-class>com.dataiku.wt1.standalone.InitializationListener</listener-class>
+    </listener>
+	
+	<welcome-file-list>
+		<welcome-file>index.html</welcome-file>
+	</welcome-file-list>
+</web-app>

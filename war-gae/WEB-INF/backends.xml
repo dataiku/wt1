@@ -1,0 +1,11 @@
+<backends>
+ <backend name="tracker">
+   <class>B4</class>
+   <instances>1</instances>
+   <max-concurrent-requests>300</max-concurrent-requests>
+   <options>
+     <fail-fast>false</fail-fast>
+     <public>true</public>
+   </options>
+ </backend>
+</backends>
