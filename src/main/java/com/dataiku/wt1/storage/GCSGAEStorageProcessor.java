@@ -59,7 +59,7 @@ public class GCSGAEStorageProcessor implements TrackingRequestProcessor{
 	}
 
 	private void flushBuffer() throws IOException {
-	    String name = CSVFormatWriter.newFileName(BackendServiceFactory.getBackendService().getCurrentInstance());
+	    String name = CSVFormatWriter.newFileName("b" + BackendServiceFactory.getBackendService().getCurrentInstance());
 
 		logger.info("Opening new file name=" + name);
 		AppEngineFile file = newFile(name);

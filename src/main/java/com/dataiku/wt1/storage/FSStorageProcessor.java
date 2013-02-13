@@ -38,7 +38,8 @@ public class FSStorageProcessor implements TrackingRequestProcessor{
     }
 
     private void flushBuffer() throws IOException {
-        String name = CSVFormatWriter.newFileName(0);
+        // No instance name on FS storage
+        String name = CSVFormatWriter.newFileName(null);
 
         File f = new File(new File(rootDir), name);
         f.getParentFile().mkdirs();

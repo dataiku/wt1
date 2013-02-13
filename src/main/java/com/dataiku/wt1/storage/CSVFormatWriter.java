@@ -8,10 +8,10 @@ import com.dataiku.wt1.TrackedRequest;
 
 public class CSVFormatWriter {
     /** Compute the filename to use for a new output file */
-    public static String newFileName(int instance) {
+    public static String newFileName(String instance) {
         long now = System.currentTimeMillis();
         SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy/MM/dd/HH/mm-ss");
-        String name = "tracker/" + sdf1.format(new Date(now)) + "-i" + instance + ".log.gz";
+        String name = "tracker/" + sdf1.format(new Date(now)) + (instance == null ? "" : "-" + instance) + ".log.gz";
         return name;
     }
     
