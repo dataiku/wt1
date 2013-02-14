@@ -1,7 +1,7 @@
 // vim: ts=4:sw=4:et
 
 function W1TTracker() {
-    this.trackURL =  "http://localhost:8080/dwt1/track";
+    this.trackURL =  "http://localhost:8080/wt1/public/p.gif";
     this.debugEnabled = false;
     this.setVisitorParams = {};
     this.delVisitorParams = [];

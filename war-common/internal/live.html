@@ -104,7 +104,7 @@ background-color:#DDF;
         <thead>
             <tr>
                 <th>Timestamp</th>
-                <th>Source Addr</th><th>Visitor id</th><th>Page</th>
+                <th>Source Addr</th><th>Visitor id</th><th>Session id</th><th>Page</th>
                 <th>Referer</th><th>Evt. type</th><th>Visitor params</th>
                 <th>Session params</th><th>Event params</th><th>User-Agent</th>
                 <th>Sizes</th><th>Br. Lang</th><th>TZ</th></tr>
@@ -125,12 +125,13 @@ background-color:#DDF;
     	    html += "<tr class=\"row_" + (i%2 == 0 ? "even" : "odd") + "\">";
     	    html += "<td>" + new Date(line.now).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
     	    html += "<td>" + line.origAddress + "</td>";
-    	    html += "<td>" + line.visitorCookieValue + "</td>";
+    	    html += "<td>" + line.visitorId + "</td>";
+    	    html += "<td>" + line.sessionId + "</td>";
     	    html += "<td>" + (line.page ? line.page : "-") + "</td>";
     	    html += "<td>" + (line.referer ? line.referer : "-") + "</td>";
     	    html += "<td>" + (line.type ? line.type : "-") + "</td>";
-    	    html += "<td>" + (line.visitorParamsCookieValue ? line.visitorParamsCookieValue : "-")+ "</td>";
-    	    html += "<td>" + (line.sessionParamsCookieValue ? line.sessionParamsCookieValue : "-") + "</td>";
+    	    html += "<td>" + (line.visitorParams ? line.visitorParams : "-")+ "</td>";
+    	    html += "<td>" + (line.sessionParams ? line.sessionParams : "-") + "</td>";
     	    html += "<td>" + (line.eventParams ? line.eventParams : "-") + "</td>";
     	    html += "<td>" + line.ua + "</td>";
     	    html += "<td>B=" + line.browserWidth + "x" + line.browserHeight + " S=" + line.screenWidth + "x" + line.screenHeight + "</td>";
@@ -165,9 +166,9 @@ background-color:#DDF;
 
         $("#counters tr.forwarder").remove();
         
-        for (var i in data.forwarders) {
-            var fd = data.forwarders[i];
-            var html = "<tr class=\"forwarder\"><td>Forwarder " + fd.name + "</td><td><table><tr class=\"counters_row\">";
+        for (var i in data.handlers) {
+            var fd = data.handlers[i];
+            var html = "<tr class=\"forwarder\"><td>Handler " + fd.name + "</td><td><table><tr class=\"counters_row\">";
             html += "<td>" + fd.queuedEvents + "<br /><span class=\"legend\">events queued</span></td>";
             html += "<td>" + fd.lostInQueueEvents + "<br /><span class=\"legend\">events lost in queue</span></td>";
             html += "<td>" + fd.processedEvents + "<br /><span class=\"legend\">events processed</span></td>";
@@ -179,7 +180,7 @@ background-color:#DDF;
     
     function refresh() {
     	$.ajax({
-    	   url : "internal/live",
+    	   url : "live",
     	   success : function(data) {
     	       $("#error").html("");
     	       drawLastQueries(data.lastRequests);
