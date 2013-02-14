@@ -15,7 +15,9 @@ public class HandlersServlet extends HttpServlet {
    
     public void service(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         if (req.getPathInfo() == null) {
-            throw new ServletException("Bad path");
+            resp.setStatus(400);
+            resp.getWriter().write("Expected query: handlers/handlerName/handlerQueryDetails");
+            return;
         }
         
         String pathInfo = req.getPathInfo();
@@ -25,6 +27,8 @@ public class HandlersServlet extends HttpServlet {
                 return;
             }
         }
-        throw new ServletException("Failed to find handler for " + pathInfo);
+        resp.setStatus(404);
+        resp.getWriter().write("No handler matched for " + pathInfo);
+        return;
     }
 }

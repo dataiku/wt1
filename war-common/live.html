@@ -179,7 +179,7 @@ background-color:#DDF;
     
     function refresh() {
     	$.ajax({
-    	   url : "debug",
+    	   url : "internal/live",
     	   success : function(data) {
     	       $("#error").html("");
     	       drawLastQueries(data.lastRequests);

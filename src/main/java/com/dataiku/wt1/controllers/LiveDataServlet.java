@@ -11,19 +11,17 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dataiku.wt1.ProcessingQueue;
 import com.dataiku.wt1.TrackedRequest;
-import com.dataiku.wt1.ProcessingQueue.Stats;
-
 import com.google.gson.Gson;
 
 @SuppressWarnings("serial")
-public class DebuggingServlet extends HttpServlet {
-    static class DebugInfo {
+public class LiveDataServlet extends HttpServlet {
+    static class LiveDataInfo {
         List<TrackedRequest> lastRequests = new ArrayList<TrackedRequest>();
         ProcessingQueue.Stats stats;
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        DebugInfo di = new DebugInfo();
+        LiveDataInfo di = new LiveDataInfo();
         ProcessingQueue.getInstance().fillLastReceived(di.lastRequests);
         
         Collections.reverse(di.lastRequests);
