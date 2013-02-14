@@ -1,4 +1,4 @@
-package com.dataiku.wt1;
+package com.dataiku.wt1.tools;
 
 import java.io.IOException;
 import java.io.InputStream;
