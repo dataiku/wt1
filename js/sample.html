@@ -1,0 +1,45 @@
+<html>
+  <head>
+
+
+<script type="text/javascript">
+  //console.info("Push");
+  var _wt1Q = _wt1Q || [];
+
+
+  _wt1Q.push(["setVisitorParam", "vid", "pouet"]);
+  _wt1Q.push(["trackPage", { "user" : "kikoo", "page": "important"}]);
+
+  (function() {
+    var script = document.createElement('script');
+    script.src = "track.js";
+    script.type = 'text/javascript';
+    script.async = "true";
+    var script0 = document.getElementsByTagName("script")[0];
+    script0.parentNode.insertBefore(script, script0);
+  })();
+  //console.info("Pushed");
+</script>
+
+
+  </head>
+  <body>
+  
+    <input type="submit" id="s1" />
+    <input type="submit" id="s2" value="Del param" />
+  
+  
+     <script>
+        _wt1Q.push(["setSessionParam", "ppp", "yes  really"]);
+        _wt1Q.push(["setSessionParam", "ppp2", "vp2"]);
+        document.getElementById("s1").onclick = function() { _wt1Q.push(["trackEvent", {"type": "button", "id" : "s1"}]); }
+        
+        document.getElementById("s2").onclick = function() { _wt1Q.push(["delSessionParam", "ppp"])};
+     </script>
+  
+
+
+
+  </body>
+
+
