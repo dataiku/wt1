@@ -5,53 +5,44 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.SingleClientConnManager;
+import org.apache.http.params.CoreConnectionPNames;
 
-public class URLBencher {
-	static HttpClient client;
+public class SyncURLBencher {
 	
 	static class MyThread extends Thread {
 		int threadId;
 		URL u;
 		int nb;
-		Random r = new Random();
 		public void run() {
+		    ClientConnectionManager cm = new SingleClientConnManager();
+		    DefaultHttpClient httpclient = new DefaultHttpClient(cm);
+		    httpclient.getParams()
+	          .setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 30000)
+	          .setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 30000)
+	          .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
+	          .setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true);
+
 			long totalHTime = 0, maxHTime = 0;
 			long totalBTime = 0, maxBTime = 0;
 			for (int i = 0; i < nb; i++) {
 				try {
 					long before = System.nanoTime();
-					/*
-					HttpURLConnection conn = (HttpURLConnection) u.openConnection();
-					int code = conn.getResponseCode();
-					*/
+					HttpGet get = new HttpGet(u.toExternalForm());
 					
-					String url  = u.toExternalForm();
-					if (r.nextInt(300) == 1) {
-					    url += "?type=purchase&amount=" + r.nextInt(120);
-					}
-
-					GetMethod gm = new GetMethod(url);
-
+					HttpResponse resp = httpclient.execute(get);
 					
-					/* For some users, simulate the fact that they are the same, coming back (to have more visits than visitors) */
-					if (r.nextInt(20 + r.nextInt(10)) == 1) {
-					    gm.addRequestHeader("Cookie", "__wt1vic=888888888");
-					}
-					
-//					System.out.println(url);
-					gm.getParams().setCookiePolicy(CookiePolicy.IGNORE_COOKIES);
-					int code = client.executeMethod(gm);
+					int code = resp.getStatusLine().getStatusCode();
 
 					long atCode = System.nanoTime();
 
-					InputStream is = gm.getResponseBodyAsStream();
+					InputStream is = resp.getEntity().getContent();
 					IOUtils.toByteArray(is);
 					is.close();
 					long atEnd = System.nanoTime();
@@ -76,18 +67,12 @@ public class URLBencher {
 		String url = args[0];
 		URL u = new URL(url);
 
+		
 		int nb = Integer.parseInt(args[1]);
 		int threads = Integer.parseInt(args[2]);
 		
-		client = new HttpClient();
-		MultiThreadedHttpConnectionManager m = new MultiThreadedHttpConnectionManager();
-		m.setMaxConnectionsPerHost(1000);
-		m.setMaxTotalConnections(1000);
-		client.setHttpConnectionManager(m);
-		
-	
 
-		List<MyThread> tlist = new ArrayList<URLBencher.MyThread>();
+		List<MyThread> tlist = new ArrayList<SyncURLBencher.MyThread>();
 		for (int i = 0; i < threads; i++) {
 			MyThread mt = new MyThread();
 			mt.u = u;

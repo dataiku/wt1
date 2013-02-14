@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dataiku.wt1.ProcessingQueue;
 import com.dataiku.wt1.TrackedRequest;
+import com.dataiku.wt1.ProcessingQueue.Stats;
+
 import com.google.gson.Gson;
 
 @SuppressWarnings("serial")

@@ -12,24 +12,24 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
-
 import com.dataiku.wt1.ProcessingQueue;
 import com.dataiku.wt1.TrackedRequest;
 import com.dataiku.wt1.UUIDGenerator;
 import com.dataiku.wt1.Utils;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+
 @SuppressWarnings("serial")
 public class PixelServlet extends HttpServlet {
     private byte[] pixelData;
-	
+
     private static final String PIXEL_PATH = "/WEB-INF/spixel.gif";
 
     public static final String CACHEKILL_PARAM = "__wt1ts";
     public static final String TRACKTYPE_PARAM = "__wt1ty";
     public static final String REFERRER_PARAM = "__wt1ref";
-    
+
     public static final String TZOFFSET_PARAM = "__wt1tzo";
     public static final String BROWSER_LANG_PARAM = "__wt1lang";
     public static final String BROWSER_WIDTH_PARAM = "__wt1bw";
@@ -39,6 +39,7 @@ public class PixelServlet extends HttpServlet {
 
     private static final String VISITOR_ID_COOKIE = "__wt1vic";
     private static final String VISITOR_PARAMS_COOKIE = "__wt1vpc";
+    private static final String SESSION_ID_COOKIE = "__wt1sic";
     private static final String SESSION_PARAMS_COOKIE = "__wt1spc";
 
     public static final String VISITOR_PARAMS_SET_ARG = "__wt1vpsa";
@@ -63,18 +64,21 @@ public class PixelServlet extends HttpServlet {
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-//        long before = System.currentTimeMillis();
+        long before = System.currentTimeMillis();
 
         TrackedRequest trackedReq = new TrackedRequest();
 
         /* Find all current cookies (visitor id, visitor params, session params) */
         String visitorIdCookieVal = null;
+        String sessionIdCookieVal = null;
         String visitorParamsCookieVal = null;
         String sessionParamsCookieVal = null;
         if (req.getCookies() != null) {
             for (Cookie cookie : req.getCookies()) {
                 if (cookie.getName().equals(VISITOR_ID_COOKIE)) {
                     visitorIdCookieVal = cookie.getValue();
+                } else if (cookie.getName().equals(SESSION_ID_COOKIE)) {
+                    sessionIdCookieVal = cookie.getValue();
                 } else if (cookie.getName().equals(VISITOR_PARAMS_COOKIE)) {
                     visitorParamsCookieVal = cookie.getValue();
                 } else if (cookie.getName().equals(SESSION_PARAMS_COOKIE)) {
@@ -86,13 +90,21 @@ public class PixelServlet extends HttpServlet {
         /* Set the visitor id cookie if needed */
         if (visitorIdCookieVal == null) {
             visitorIdCookieVal = UUIDGenerator.generate();
-            Cookie cookie = new Cookie(VISITOR_ID_COOKIE, visitorIdCookieVal);
-            cookie.setMaxAge(365 * 86400);
-            cookie.setPath("/");
-            resp.addCookie(cookie);
+            Cookie visitorIdCookie = new Cookie(VISITOR_ID_COOKIE, visitorIdCookieVal);
+            visitorIdCookie.setMaxAge(365 * 86400);
+            visitorIdCookie.setPath("/");
+            resp.addCookie(visitorIdCookie);
         }
+        /* Set the session id cookie. Always send it to refresh its expiration date */
+        if (sessionIdCookieVal == null) {
+            sessionIdCookieVal = UUIDGenerator.generate();
+        }
+        Cookie sessionIdCookie = new Cookie(SESSION_ID_COOKIE, sessionIdCookieVal);
+        sessionIdCookie.setMaxAge(ProcessingQueue.getInstance().getSessionExpirationTimeS());
+        sessionIdCookie.setPath("/");
+        resp.addCookie(sessionIdCookie);
 
-        /* Update the params cookies, if some arguments to modify them were passed in */
+        /* Update the visitor params cookie, if some arguments to modify them were passed in */
         {
             String set = req.getParameter(VISITOR_PARAMS_SET_ARG);
             String del = req.getParameter(VISITOR_PARAMS_DEL_ARG);
@@ -100,12 +112,13 @@ public class PixelServlet extends HttpServlet {
             /* The cookie needs to be updated */
             if (set != null || del != null || clear != null) {
                 visitorParamsCookieVal = updateCookieVal(visitorParamsCookieVal, set, del, clear);
-                Cookie cookie = new Cookie(VISITOR_PARAMS_COOKIE, visitorParamsCookieVal);
-                cookie.setMaxAge(365 * 86400);
-                cookie.setPath("/");
-                resp.addCookie(cookie);
+                Cookie visitorParamsCookie = new Cookie(VISITOR_PARAMS_COOKIE, visitorParamsCookieVal);
+                visitorParamsCookie.setMaxAge(365 * 86400);
+                visitorParamsCookie.setPath("/");
+                resp.addCookie(visitorParamsCookie);
             }
         }
+        /* Update the session params cookie, if some arguments to modify them were passed in */
         {
             String set = req.getParameter(SESSION_PARAMS_SET_ARG);
             String del = req.getParameter(SESSION_PARAMS_DEL_ARG);
@@ -115,10 +128,10 @@ public class PixelServlet extends HttpServlet {
                 sessionParamsCookieVal = updateCookieVal(sessionParamsCookieVal, set, del, clear);
             }
             /* The session cookie is always set, to refresh its expiration date */
-            Cookie cookie = new Cookie(SESSION_PARAMS_COOKIE, sessionParamsCookieVal);
-            cookie.setPath("/");
-            cookie.setMaxAge(30*60);
-            resp.addCookie(cookie);
+            Cookie sessionParamsCookie = new Cookie(SESSION_PARAMS_COOKIE, sessionParamsCookieVal);
+            sessionParamsCookie.setPath("/");
+            sessionParamsCookie.setMaxAge(ProcessingQueue.getInstance().getSessionExpirationTimeS());
+            resp.addCookie(sessionParamsCookie);
         }
 
         /* Make sure that the GIF does not get cached */
@@ -134,16 +147,16 @@ public class PixelServlet extends HttpServlet {
 
         /* Enqueue the request for processing */
         trackedReq.origAddress = req.getRemoteAddr();
-        trackedReq.visitorCookieValue = visitorIdCookieVal;
-        trackedReq.visitorParamsCookieValue = visitorParamsCookieVal;
-        trackedReq.sessionParamsCookieValue = sessionParamsCookieVal;
+        trackedReq.visitorId = visitorIdCookieVal;
+        trackedReq.sessionId = sessionIdCookieVal;
+        trackedReq.visitorParams = visitorParamsCookieVal;
+        trackedReq.sessionParams = sessionParamsCookieVal;
         trackedReq.page = req.getHeader("Referer");
         trackedReq.ua = req.getHeader("User-Agent");
 
         @SuppressWarnings("unchecked")
         Map<String, String[]> reqParams = req.getParameterMap();
         trackedReq.fillEventParams(reqParams);
-
 
         ProcessingQueue.getInstance().push(trackedReq);
 

@@ -5,13 +5,12 @@ import java.util.Date;
 
 import com.dataiku.wt1.TrackedRequest;
 
-
 public class CSVFormatWriter {
     /** Compute the filename to use for a new output file */
     public static String newFileName(String instance) {
         long now = System.currentTimeMillis();
         SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy/MM/dd/HH/mm-ss");
-        String name = "tracker/" + sdf1.format(new Date(now)) + (instance == null ? "" : "-" + instance) + ".log.gz";
+        String name = "tracker/" + sdf1.format(new Date(now)) + (instance == null ? null : "-" + instance) + ".log.gz";
         return name;
     }
     
@@ -35,7 +34,7 @@ public class CSVFormatWriter {
         sb.append('\t');
         sb.append(req.origAddress);
         sb.append('\t');
-        sb.append(req.visitorCookieValue);
+        sb.append(req.visitorId);
         sb.append("\t\"");
         sb.append(escape(req.page));
         sb.append("\"\t\"");
@@ -45,9 +44,9 @@ public class CSVFormatWriter {
         sb.append("\"\t\"");
         sb.append(escape(req.type));
         sb.append("\"\t\"");
-        sb.append(escape(req.visitorParamsCookieValue));
+        sb.append(escape(req.visitorParams));
         sb.append("\"\t\"");
-        sb.append(escape(req.sessionParamsCookieValue));
+        sb.append(escape(req.sessionParams));
         sb.append("\"\t\"");
         sb.append(escape(req.eventParams));
         sb.append("\"\t");

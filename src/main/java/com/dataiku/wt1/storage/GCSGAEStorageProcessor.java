@@ -6,6 +6,10 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 
 import org.apache.log4j.Logger;
 
@@ -119,6 +123,11 @@ public class GCSGAEStorageProcessor implements TrackingRequestProcessor{
 	public void shutdown() throws IOException {
 		flushBuffer();
 	}
+	
+    @Override
+    public void service(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException, ServletException {
+    }
 
 	private static final Logger logger = Logger.getLogger("wt1.processor.gae");
 }

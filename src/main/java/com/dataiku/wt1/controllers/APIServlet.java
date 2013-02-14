@@ -8,12 +8,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dataiku.wt1.ProcessingQueue;
+import com.dataiku.wt1.TrackedRequest;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import com.dataiku.wt1.ProcessingQueue;
-import com.dataiku.wt1.TrackedRequest;
 import com.google.gson.Gson;
 
 @SuppressWarnings("serial")
@@ -22,6 +22,7 @@ public class APIServlet extends HttpServlet {
     /** The expected JSON message */
     static class Message {
         String visitorId;
+        String sessionId;
         String vparams;
         String sparams;
         String ua;
@@ -85,9 +86,10 @@ public class APIServlet extends HttpServlet {
         for (Event event : m.events) {
             TrackedRequest trackedReq = new TrackedRequest();
             trackedReq.origAddress = req.getRemoteHost();
-            trackedReq.visitorCookieValue = m.visitorId;
-            trackedReq.visitorParamsCookieValue = m.vparams;
-            trackedReq.sessionParamsCookieValue = m.sparams;
+            trackedReq.visitorId = m.visitorId;
+            trackedReq.sessionId = m.sessionId;
+            trackedReq.visitorParams = m.vparams;
+            trackedReq.sessionParams = m.sparams;
             trackedReq.page = event.page;
             // referer
             // tzOffset

@@ -6,6 +6,10 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
@@ -126,4 +130,9 @@ public class S3StorageProcessor implements TrackingRequestProcessor{
     }
 
     private static final Logger logger = Logger.getLogger("wt1.storage.s3");
+
+    @Override
+    public void service(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException, ServletException {
+    }
 }

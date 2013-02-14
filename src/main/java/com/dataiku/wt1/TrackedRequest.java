@@ -5,7 +5,6 @@ import java.util.Map;
 
 import com.dataiku.wt1.controllers.PixelServlet;
 
-
 /**
  * Model object for one tracking event.
  */
@@ -13,11 +12,13 @@ public class TrackedRequest {
     /** IP address of the visitor */
     public String origAddress;
     /** Value of the visitor id */
-    public String visitorCookieValue;
+    public String visitorId;
+    /** Value of the session id */
+    public String sessionId;
     /** Value of the visitor params, encoded as an HTTP query string */
-    public String visitorParamsCookieValue;
+    public String visitorParams;
     /** Value of the sesion params, encoded as an HTTP query string */
-    public String sessionParamsCookieValue;
+    public String sessionParams;
 
     /** URL of the page from which the tracking event originated */
     public String page;

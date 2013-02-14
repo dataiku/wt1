@@ -6,14 +6,17 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dataiku.wt1.ProcessingQueue;
+import com.dataiku.wt1.ProcessingQueue.Stats;
+import com.dataiku.wt1.TrackedRequest;
+import com.dataiku.wt1.TrackingRequestProcessor;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-
-import com.dataiku.wt1.ProcessingQueue;
-import com.dataiku.wt1.TrackedRequest;
-import com.dataiku.wt1.TrackingRequestProcessor;
-import com.dataiku.wt1.ProcessingQueue.Stats;
 
 /**
  * 
@@ -38,7 +41,7 @@ public class FSStorageProcessor implements TrackingRequestProcessor{
     }
 
     private void flushBuffer() throws IOException {
-        // No instance name on FS storage
+        // No instance for FS storage
         String name = CSVFormatWriter.newFileName(null);
 
         File f = new File(new File(rootDir), name);
@@ -96,4 +99,9 @@ public class FSStorageProcessor implements TrackingRequestProcessor{
     }
 
     private static final Logger logger = Logger.getLogger("wt1.processor.fs");
+
+    @Override
+    public void service(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+        throw new ServletException("No HTTP service for FSStorage");
+    }
 }

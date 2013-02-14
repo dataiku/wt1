@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 /**
- * Asynchronous request processing multi-queue (one queue per forwarder + one for the storage)
+ * Asynchronous request processing multi-queue (one queue per handler  + one for the storage)
  */
 public class ProcessingQueue {
     public static class QueueHandlerStats {
@@ -28,7 +28,7 @@ public class ProcessingQueue {
     public static class Stats {
         public long receivedEvents;
         public QueueHandlerStats storage;
-        public List<QueueHandlerStats> forwarders = new ArrayList<ProcessingQueue.QueueHandlerStats>();
+        public List<QueueHandlerStats> handlers = new ArrayList<ProcessingQueue.QueueHandlerStats>();
         /* Storage specific */
         public long savedEvents;
         public long createdFiles;
@@ -36,7 +36,13 @@ public class ProcessingQueue {
         public long savedEventsGZippedSize;
     }
 
-    class QueueHandler implements Runnable {
+    public class QueueHandler implements Runnable {
+        public String getName() {
+            return localStats.name;
+        }
+        public TrackingRequestProcessor getProcessor() {
+            return processor;
+        }
         QueueHandlerStats localStats;
         TrackingRequestProcessor processor;
         LinkedBlockingQueue<TrackedRequest> inQueue;
@@ -79,62 +85,79 @@ public class ProcessingQueue {
     private LimitedQueue<TrackedRequest> lastQueue = new LimitedQueue<TrackedRequest>(100);
     private Stats stats = new Stats();
     private volatile boolean shutdown;
-    private int queueSize = 5000;
+    
+    // Configuration
+    private int queueSize;
+    private int  sessionExpirationTimeS;
 
     private List<QueueHandler> handlers = new ArrayList<ProcessingQueue.QueueHandler>();
+
+    public List<QueueHandler> getQueueHandlers() {
+        return handlers;
+    }
 
     public List<? extends Runnable> getRunnables() {
         return handlers;
     }
-
+    
+    public int getSessionExpirationTimeS() {
+        return sessionExpirationTimeS;
+    }
+    
     public void configure(Properties props) throws Exception {
+        /* Global config */
+        queueSize = Integer.parseInt(props.getProperty(ConfigConstants.MAX_QUEUE_SIZE_PARAM, ConfigConstants.DEFAULT_MAX_QUEUE_SIZE));
+        sessionExpirationTimeS =  Integer.parseInt(props.getProperty(ConfigConstants.SESSION_EXPIRATION_PARAM, ConfigConstants.DEFAULT_SESSION_EXPIRATION));
+
         /* Load main storage processor from config */
-        String processorClass = props.getProperty("storage.class");
-        Map<String, String> processorParams = new HashMap<String, String>();
-        for (Object _k : props.keySet()) {
-            String k = (String)_k;
-            if (k.startsWith("storage.params.")) {
-                processorParams.put(k.replace("storage.params.", ""), props.getProperty(k));
+        {
+            String processorClass = props.getProperty("storage.class");
+            Map<String, String> processorParams = new HashMap<String, String>();
+            for (Object _k : props.keySet()) {
+                String k = (String)_k;
+                if (k.startsWith("storage.params.")) {
+                    processorParams.put(k.replace("storage.params.", ""), props.getProperty(k));
+                }
             }
+
+            TrackingRequestProcessor processor = (TrackingRequestProcessor) Class.forName(processorClass).newInstance();
+            processor.init(processorParams);
+            QueueHandler storageHandler = new QueueHandler();
+            storageHandler.localStats = new QueueHandlerStats("storage");
+            storageHandler.inQueue = new LinkedBlockingQueue<TrackedRequest>(queueSize);
+            storageHandler.processor = processor;
+            stats.storage = storageHandler.localStats;
+            handlers.add(storageHandler);
         }
 
-        TrackingRequestProcessor processor = (TrackingRequestProcessor) Class.forName(processorClass).newInstance();
-        processor.init(processorParams);
-        QueueHandler storageHandler = new QueueHandler();
-        storageHandler.localStats = new QueueHandlerStats("storage");
-        storageHandler.inQueue = new LinkedBlockingQueue<TrackedRequest>(queueSize);
-        storageHandler.processor = processor;
-        stats.storage = storageHandler.localStats;
-        handlers.add(storageHandler);
-
-        /* Load forwarders */
+        /* Load handlers */
         for (Object _k : props.keySet()) {
             String k = (String)_k;
-            if (k.startsWith("forwarder.") && k.endsWith(".class")) {
-                String name = k.replace("forwarder.", "").replace(".class", "");
-                TrackingRequestProcessor forwarder = configureForwarder(props, name);
-                QueueHandler forwarderHandler = new QueueHandler();
-                forwarderHandler.localStats = new QueueHandlerStats(name);
-                forwarderHandler.inQueue = new LinkedBlockingQueue<TrackedRequest>(queueSize);
-                forwarderHandler.processor = forwarder;
-                stats.forwarders.add(forwarderHandler.localStats);
-                handlers.add(forwarderHandler);
+            if (k.startsWith("handler.") && k.endsWith(".class")) {
+                String name = k.replace("handler.", "").replace(".class", "");
+                TrackingRequestProcessor handler = configureHandler(props, name);
+                QueueHandler queueHandler = new QueueHandler();
+                queueHandler.localStats = new QueueHandlerStats(name);
+                queueHandler.inQueue = new LinkedBlockingQueue<TrackedRequest>(queueSize);
+                queueHandler.processor = handler;
+                stats.handlers.add(queueHandler.localStats);
+                handlers.add(queueHandler);
             }
         }
     }
 
-    private TrackingRequestProcessor configureForwarder(Properties props, String name) throws Exception {
-        String forwarderClass = props.getProperty("forwarder." + name + ".class");
-        Map<String, String> forwarderParams = new HashMap<String, String>();
+    private TrackingRequestProcessor configureHandler(Properties props, String name) throws Exception {
+        String handlerclass = props.getProperty("handler." + name + ".class");
+        Map<String, String> handlerParams = new HashMap<String, String>();
         for (Object _k : props.keySet()) {
             String k = (String)_k;
-            if (k.startsWith("forwarder." + name + ".params.")) {
-                forwarderParams.put(k.replace("forwarder." + name + ".params.", ""), props.getProperty(k));
+            if (k.startsWith("handler." + name + ".params.")) {
+                handlerParams.put(k.replace("handler." + name + ".params.", ""), props.getProperty(k));
             }
         }
 
-        TrackingRequestProcessor processor = (TrackingRequestProcessor) Class.forName(forwarderClass).newInstance();
-        processor.init(forwarderParams);
+        TrackingRequestProcessor processor = (TrackingRequestProcessor) Class.forName(handlerclass).newInstance();
+        processor.init(handlerParams);
         return processor;
     }
 
@@ -146,10 +169,6 @@ public class ProcessingQueue {
     /** Notify the queue that the application is shutting down */
     public void setShutdown() {
         this.shutdown = true;
-    }
-
-    public void setQueueSize(int queueSize) {
-        this.queueSize = queueSize;
     }
 
     public void fillLastReceived(List<TrackedRequest> target) {
