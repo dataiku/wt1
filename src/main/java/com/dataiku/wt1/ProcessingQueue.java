@@ -87,6 +87,7 @@ public class ProcessingQueue {
     private volatile boolean shutdown;
     
     // Configuration
+    private Properties configuration;
     private int queueSize;
     private int  sessionExpirationTimeS;
 
@@ -104,7 +105,12 @@ public class ProcessingQueue {
         return sessionExpirationTimeS;
     }
     
+    public Properties getConfiguration() {
+        return configuration;
+    }
+    
     public void configure(Properties props) throws Exception {
+        this.configuration = props;
         /* Global config */
         queueSize = Integer.parseInt(props.getProperty(ConfigConstants.MAX_QUEUE_SIZE_PARAM, ConfigConstants.DEFAULT_MAX_QUEUE_SIZE));
         sessionExpirationTimeS =  Integer.parseInt(props.getProperty(ConfigConstants.SESSION_EXPIRATION_PARAM, ConfigConstants.DEFAULT_SESSION_EXPIRATION));

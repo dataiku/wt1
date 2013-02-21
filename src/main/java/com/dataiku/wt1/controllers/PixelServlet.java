@@ -12,13 +12,13 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+
 import com.dataiku.wt1.ProcessingQueue;
 import com.dataiku.wt1.TrackedRequest;
 import com.dataiku.wt1.UUIDGenerator;
 import com.dataiku.wt1.Utils;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
 
 @SuppressWarnings("serial")
 public class PixelServlet extends HttpServlet {
@@ -146,7 +146,7 @@ public class PixelServlet extends HttpServlet {
         resp.getOutputStream().write(pixelData);
 
         /* Enqueue the request for processing */
-        trackedReq.origAddress = req.getRemoteAddr();
+        trackedReq.origAddress = computeRealRemoteAddress(req);
         trackedReq.visitorId = visitorIdCookieVal;
         trackedReq.sessionId = sessionIdCookieVal;
         trackedReq.visitorParams = visitorParamsCookieVal;
@@ -162,6 +162,19 @@ public class PixelServlet extends HttpServlet {
 
         //		logger.info("qtime=" + (System.currentTimeMillis()-before));
     }
+
+    /**
+     * Computes the remote host (ie, client) address. This first looks at common Proxy headers
+     * before using the request source address
+     */
+    public String computeRealRemoteAddress(HttpServletRequest req) {
+        String val = req.getHeader("X-Forwarded-For");
+        if (val != null) return val;
+        val = req.getHeader("X-Real-IP");
+        if (val != null) return val;
+        return req.getRemoteAddr();
+    }
+
 
     /**
      * Computes the updated value for a params cookie, given the old value of the cookie, and the
