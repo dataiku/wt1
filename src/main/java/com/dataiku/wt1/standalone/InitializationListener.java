@@ -16,6 +16,8 @@ import com.dataiku.wt1.TrackingRequestProcessor;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.helpers.Loader;
 
 /**
  * Backend initialization
@@ -43,10 +45,6 @@ public class InitializationListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent event) {
-        System.out.println("*********************");
-        Logger.getRootLogger().removeAllAppenders();
-        BasicConfigurator.configure();
-
         try {
             /* Load config */
             File configFile = new File(event.getServletContext().getRealPath(CONFIG_PATH));

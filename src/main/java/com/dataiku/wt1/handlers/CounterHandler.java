@@ -44,7 +44,7 @@ public class CounterHandler implements TrackingRequestProcessor {
     private Set<String> seenVisitors = new HashSet<String>();
     private long previousSeenVisits;
     private Map<String, Long> activeVisits = new HashMap<String, Long>(); // Value = last active timestamp
-    
+
     private boolean trackVisitors = true;
 
     static class Sum {
@@ -62,7 +62,7 @@ public class CounterHandler implements TrackingRequestProcessor {
         volatile boolean shutdown;
         public void run() {
             while (!shutdown) {
-                logger.info("Running eviction");
+                logger.debug("Running eviction");
                 synchronized(CounterHandler.this) {
                     long minTime = System.currentTimeMillis() - 1000*ProcessingQueue.getInstance().getSessionExpirationTimeS();
                     List<String> toMove = new ArrayList<String>();
@@ -71,13 +71,13 @@ public class CounterHandler implements TrackingRequestProcessor {
                             toMove.add(activeVisit.getKey());
                         }
                     }
-                    logger.info("Evicting " + toMove.size() + " sessions");
+                    logger.debug("Evicting " + toMove.size() + " sessions");
                     for (String entry : toMove) {
                         previousSeenVisits++;
                         activeVisits.remove(entry);
                     }
-                    logger.info("Evicted " + toMove.size() + " sessions");
-                    
+                    logger.debug("Evicted " + toMove.size() + " sessions");
+
                 }
                 synchronized (this) {
                     try { this.wait(10000); } catch (InterruptedException e) {}
@@ -90,7 +90,7 @@ public class CounterHandler implements TrackingRequestProcessor {
     public void init(Map<String, String> params) throws IOException {
         for (String key : params.keySet()) {
             if (key.equals("trackVisitors") && params.get(key).equalsIgnoreCase("false")) trackVisitors = false;
-            
+
             if (key.startsWith("sum.")) {
                 String[] chunks = key.split("\\.");
                 String sumName = chunks[1];
@@ -166,8 +166,10 @@ public class CounterHandler implements TrackingRequestProcessor {
 
     @Override
     public void shutdown() throws IOException {
-        set.shutdown = true;
-        set.notifyAll();
+        synchronized (set) {
+            set.shutdown = true;
+            set.notifyAll();
+        }
         try {
             set.join();
         } catch (InterruptedException e) {
