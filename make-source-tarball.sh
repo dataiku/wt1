@@ -8,7 +8,7 @@ then
   exit 1
 fi
 
-DIRNAME=wt1-src-$VERSION
+DIRNAME=wt1-$VERSION-src
 DIR=dist/src-tarball/$DIRNAME
 
 rm -rf $DIR
@@ -17,4 +17,4 @@ git clone https://github.com/dataiku/wt1.git $DIR
 cd $DIR
 rm -rf .git
 cd ..
-tar cz $DIRNAME > ../wt1-$VERSION.tar.gz
+tar cz $DIRNAME > ../wt1-$VERSION-src.tar.gz
