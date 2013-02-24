@@ -45,10 +45,7 @@ W1TTracker.prototype.push = function(command) {
         throw "Unexpected type as input of push :" + typeof(command); 
     }
     
-    if (command[0] == "setAccount") {
-        this.account = command[1];
-
-    } else if (command[0] == "setSizeCapture") {
+    if (command[0] == "setSizeCapture") {
         this.sizeDetails = command[1] == "true" ? true : false;
     /* Visitor params */
     } else if (command[0] == "setVisitorParam") {
