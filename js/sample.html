@@ -5,7 +5,7 @@
   var _wt1Q = _wt1Q || [];
 
   /* Example of tracking before the _wt1Q tracker is ready */
-  _wt1Q.push(["setVisitorParam", "vid", "internal_vid1"]);
+  _wt1Q.push(["setVisitorParam", "vparam_start", "vparam_start"]);
   _wt1Q.push(["trackPage", { "page": "important", "basket": "empty"}]);
 
   (function() {
@@ -22,8 +22,10 @@
 </head>
 <body>
   
-    <input type="submit" id="s1" />
-    <input type="submit" id="s2" value="Del param" />
+    <input type="submit" id="s1" value="Track event S1"/>
+    <input type="submit" id="s2" value="Remove session param sp1" />
+    <input type="submit" id="s3" value="Add visitor param vp2" />
+    <input type="submit" id="s4" value="Clear visitor params" />
   
     <script>
         /* Following calls will have these params set */
@@ -33,7 +35,11 @@
         
         /* After click on S2, sp1 will be removed */
         document.getElementById("s2").onclick = function() { _wt1Q.push(["delSessionParam", "sp1"])};
-     </script>
+        /* After click on S3, vp2 will be added */
+        document.getElementById("s3").onclick = function() { _wt1Q.push(["setVisitorParam", "vp2", "vp2val"])};
+
+        document.getElementById("s4").onclick = function() { _wt1Q.push(["clearVisitorParams"])};
+    </script>
   
 
 

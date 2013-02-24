@@ -1,4 +1,48 @@
 // vim: ts=4:sw=4:et
+(function() {
+"use strict";
+/* global _wt1Q:true, console:false */
+/* jshint sub:true, eqnull:true */
+
+// Add Object.keys support for IE, without touching the global namespace
+if (!Object.keys) {
+  Object.wt1keys = (function () {
+    var hasOwnProperty = Object.prototype.hasOwnProperty,
+        hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
+        dontEnums = [
+          'toString',
+          'toLocaleString',
+          'valueOf',
+          'hasOwnProperty',
+          'isPrototypeOf',
+          'propertyIsEnumerable',
+          'constructor'
+        ],
+        dontEnumsLength = dontEnums.length;
+ 
+    return function (obj) {
+      if ((typeof obj !== 'object' && typeof obj !== 'function') || obj === null) {
+          throw new TypeError('Object.keys called on non-object');
+      }
+ 
+      var result = [];
+ 
+      for (var prop in obj) {
+        if (hasOwnProperty.call(obj, prop)) { result.push(prop); }
+      }
+ 
+      if (hasDontEnumBug) {
+        for (var i=0; i < dontEnumsLength; i++) {
+          if (hasOwnProperty.call(obj, dontEnums[i])) { result.push(dontEnums[i]); } 
+        }
+      }
+      return result;
+    };
+  })();
+} else {
+  Object.wt1keys = function(o) { return Object.keys(o); };
+}
+
 
 function W1TTracker() {
     this.trackURL =  "http://localhost:8080/wt1/public/p.gif";
@@ -14,21 +58,21 @@ function W1TTracker() {
 }
 
 W1TTracker.prototype.debug = function(x) {
-    if (this.debugEnabled) console.info(x);
+    if (this.debugEnabled) { console.info(x); }
 };
 
 W1TTracker.prototype.isArray = function(a){
-    if (a == null) return false;
+    if (a == null) { return false; }
     if(Array.isArray) {
         return Array.isArray(a);   
     } else {
-        return (typeof(a) == 'object' && a instanceof Array);        
+        return (typeof(a) === 'object' && a instanceof Array);        
     }
 };
 
 W1TTracker.prototype.isObject = function(a) {
-    if (a == null) return false;
-    return typeof(a) == 'object';
+    if (a == null) { return false; }
+    return typeof(a) === 'object';
 };
 
 W1TTracker.prototype.fillSizeParams = function(params) {
@@ -45,24 +89,24 @@ W1TTracker.prototype.push = function(command) {
         throw "Unexpected type as input of push :" + typeof(command); 
     }
     
-    if (command[0] == "setSizeCapture") {
-        this.sizeDetails = command[1] == "true" ? true : false;
+    if (command[0] === "setSizeCapture") {
+        this.sizeDetails = command[1] === "true" ? true : false;
     /* Visitor params */
-    } else if (command[0] == "setVisitorParam") {
+    } else if (command[0] === "setVisitorParam") {
         this.setVisitorParams[command[1]] = command[2];
-    } else if (command[0] == "delVisitorParam") {
+    } else if (command[0] === "delVisitorParam") {
         this.delVisitorParams.push(command[1]);
-    } else if (command[0] == "clearVisitorParams") {
-        this.clearVisitorParam = true;
+    } else if (command[0] === "clearVisitorParams") {
+        this.clearVisitorParams = true;
     /* Session params */
-    } else if (command[0] == "setSessionParam") {
+    } else if (command[0] === "setSessionParam") {
         this.setSessionParams[command[1]] = command[2];
-    } else if (command[0] == "delSessionParam") {
+    } else if (command[0] === "delSessionParam") {
         this.delSessionParams.push(command[1]);
-    } else if (command[0] == "clearSessionParams") {
-        this.clearSessionParam = true;
+    } else if (command[0] === "clearSessionParams") {
+        this.clearSessionParams = true;
  
-    } else if (command[0] == "trackPage") {
+    } else if (command[0] === "trackPage") {
         if (command.length < 2 || command[1] == null) {
             // No param or null param is ok
             command[1] = [];
@@ -74,7 +118,7 @@ W1TTracker.prototype.push = function(command) {
             command[1].__wt1ref = document.referrer;
         }
         this.track("page", command[1]);
-    } else if (command[0] == "trackEvent") {
+    } else if (command[0] === "trackEvent") {
         if (command.length < 2 || command[1] == null) {
             // No param or null param is ok
             command[1] = [];
@@ -94,8 +138,10 @@ W1TTracker.prototype.push = function(command) {
 /* Encode a query string from an object { a:1, b:"test 1" } --> "a=1&b=test+1" */
 W1TTracker.prototype.encodeQS = function(params) {
     var urlParams = [];
-    for (var p in params){
-        urlParams.push(encodeURIComponent(p) + "=" + encodeURIComponent(params[p]));
+    for (var p in params) {
+        if (params.hasOwnProperty(p)) {
+            urlParams.push(encodeURIComponent(p) + "=" + encodeURIComponent(params[p]));
+        }
     }
     return urlParams.join("&").replace("%20", "+"); 
 };
@@ -104,7 +150,9 @@ W1TTracker.prototype.encodeQS = function(params) {
 W1TTracker.prototype.encodeQSBooleans = function(params) {
     var urlParams = [];
     for (var p in params){
-        urlParams.push(encodeURIComponent(params[p]) + "=true");
+        if (params.hasOwnProperty(p)) {
+            urlParams.push(encodeURIComponent(params[p]) + "=true");
+        }
     }
     return urlParams.join("&").replace("%20", "+"); 
 };
@@ -121,7 +169,7 @@ W1TTracker.prototype.track = function(type, params) {
     }
 
     /* If some params have been set/removed/cleared, send them in the request */
-    if (Object.keys(this.setVisitorParams).length > 0) {
+    if (Object.wt1keys(this.setVisitorParams).length > 0) {
         params["__wt1vpsa"] = this.encodeQS(this.setVisitorParams);
         this.setVisitorParams = {};
     }
@@ -129,11 +177,11 @@ W1TTracker.prototype.track = function(type, params) {
         params["__wt1vpda"] = this.encodeQSBooleans(this.delVisitorParams);
         this.delVisitorParams = [];
     }
-    if (this.clearVisitorParams == true) {
+    if (this.clearVisitorParams === true) {
         params["__wt1vpca"] = "true";
         this.clearVisitorParams = false;
     }
-    if (Object.keys(this.setSessionParams).length > 0) {
+    if (Object.wt1keys(this.setSessionParams).length > 0) {
         params["__wt1spsa"] = this.encodeQS(this.setSessionParams);
         this.setSessionParams = {};
     }
@@ -141,7 +189,7 @@ W1TTracker.prototype.track = function(type, params) {
         params["__wt1spda"] = this.encodeQSBooleans(this.delSessionParams);
         this.delSessionParams = [];
     }
-    if (this.clearSessionParams == true) {
+    if (this.clearSessionParams === true) {
         params["__wt1spca"] = "true";
         this.clearSessionParams = false;
     }
@@ -156,13 +204,15 @@ W1TTracker.prototype.track = function(type, params) {
  * functions, and execute them.
  * The _wt1Q array is replaced by the tracker object, which exposes the same push function
  */
-if (typeof(_wt1Q) != "undefined") {
+if (typeof(_wt1Q) !== "undefined") {
     var prevCommands = _wt1Q;
     _wt1Q = new W1TTracker();
     _wt1Q.debug("Already had "+ prevCommands.length + " commands");
-    for (var i in prevCommands) {
+    for (var i = 0; i < prevCommands.length; i++) {
         _wt1Q.push(prevCommands[i]);
     }
 } else {
     _wt1Q = new W1TTracker();
 }
+
+}());
