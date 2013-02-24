@@ -15,20 +15,21 @@ function W1TTracker() {
 
 W1TTracker.prototype.debug = function(x) {
     if (this.debugEnabled) console.info(x);
-}
+};
 
 W1TTracker.prototype.isArray = function(a){
     if (a == null) return false;
     if(Array.isArray) {
         return Array.isArray(a);   
     } else {
-        return (typeof(a) == 'object' && a instanceof Array)        
+        return (typeof(a) == 'object' && a instanceof Array);        
     }
-}
+};
+
 W1TTracker.prototype.isObject = function(a) {
     if (a == null) return false;
     return typeof(a) == 'object';
-}
+};
 
 W1TTracker.prototype.fillSizeParams = function(params) {
     var root= document.documentElement;
@@ -37,7 +38,7 @@ W1TTracker.prototype.fillSizeParams = function(params) {
     params.__wt1bh = window.innerHeight || root.clientHeight || document.body.clientHeight;
     params.__wt1sw = window.screen.width;
     params.__wt1sh = window.screen.height;
-}
+};
 
 W1TTracker.prototype.push = function(command) {
     if (!this.isArray(command)) {
@@ -91,16 +92,17 @@ W1TTracker.prototype.push = function(command) {
     } else {
         throw "Unexpected command in _wt1Q.push: " + command[0];
     }
-}
+};
 
 /* Encode a query string from an object { a:1, b:"test 1" } --> "a=1&b=test+1" */
 W1TTracker.prototype.encodeQS = function(params) {
     var urlParams = [];
     for (var p in params){
-        urlParams.push(encodeURIComponent(p) + "=" + encodeURIComponent(params[p]))
+        urlParams.push(encodeURIComponent(p) + "=" + encodeURIComponent(params[p]));
     }
     return urlParams.join("&").replace("%20", "+"); 
-}
+};
+
 /* Encode a query string from an array of values: [a,b] --> "a=true&b=true" */
 W1TTracker.prototype.encodeQSBooleans = function(params) {
     var urlParams = [];
@@ -108,8 +110,7 @@ W1TTracker.prototype.encodeQSBooleans = function(params) {
         urlParams.push(encodeURIComponent(params[p]) + "=true");
     }
     return urlParams.join("&").replace("%20", "+"); 
-}
-
+};
 
 W1TTracker.prototype.track = function(type, params) {
     this.debug("track ... " + type);
@@ -152,11 +153,11 @@ W1TTracker.prototype.track = function(type, params) {
     var url = this.encodeQS(params);
     var img = new Image(1, 1);
     img.src = this.trackURL + "?" + url;
-}  
+};
 
 /* Script is ready to load: retrieve the already pushed
  * functions, and execute them.
- * The _wt1Q array is replaced by the tracker object, which exposes the same push functino
+ * The _wt1Q array is replaced by the tracker object, which exposes the same push function
  */
 if (typeof(_wt1Q) != "undefined") {
     var prevCommands = _wt1Q;
