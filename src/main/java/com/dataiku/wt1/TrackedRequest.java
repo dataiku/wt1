@@ -3,6 +3,8 @@ package com.dataiku.wt1;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.dataiku.wt1.controllers.PixelServlet;
 
 /**
@@ -45,7 +47,10 @@ public class TrackedRequest {
     public String type;
 
     /** Timestamp at which the event was received on the backend */
-    public long now = System.currentTimeMillis();
+    public long serverTS = System.currentTimeMillis();
+    
+    /** Timestamp at which the event was emitted by the client */
+    public long clientTS;
 
     /** Custom Parameters of the event, encoded as an HTTP query string */
     public String eventParams;
@@ -61,6 +66,15 @@ public class TrackedRequest {
             return 0;
         }
     }
+    
+    private long lenientLong(String[] v) {
+        if (v == null || v.length < 1) return 0;
+        try {
+            return Long.parseLong(v[0]);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 
     /**
      * This is called by the TrackerServlet and must not be used in processors
@@ -69,8 +83,10 @@ public class TrackedRequest {
         Map<String, String[]> out = new HashMap<String, String[]>();
         for (Map.Entry<String, String[]> e : orig.entrySet()) {
             /* Ignore params which are handled by the tracker instead of being user params */
-            if (e.getKey().equals(PixelServlet.CACHEKILL_PARAM)) {
-                continue;
+            System.out.println("PROCESS " + e.getKey() + " val= " + StringUtils.join(e.getValue()));
+            if (e.getKey().equals(PixelServlet.CLIENTTS_PARAM)) {
+                clientTS = lenientLong(e.getValue());
+                System.out.println("clientTS set to " + clientTS);
             } else if (e.getKey().equals(PixelServlet.REFERRER_PARAM)) {
                 referer = e.getValue().length > 0 ? e.getValue()[0] : null;
             } else if (e.getKey().equals(PixelServlet.TRACKTYPE_PARAM)) {

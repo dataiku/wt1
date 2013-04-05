@@ -143,7 +143,7 @@ public class CounterHandler implements TrackingRequestProcessor {
                     seenVisitors.add(req.visitorId);
                 }
             }
-            activeVisits.put(req.sessionId, req.now);
+            activeVisits.put(req.sessionId, req.serverTS);
             if (sums.size() > 0) {
                 Map<String, String[]> eparams =  Utils.decodeQueryString(req.eventParams);
 

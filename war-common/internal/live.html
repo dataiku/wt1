@@ -103,7 +103,7 @@ background-color:#DDF;
     <table id="last_queries">
         <thead>
             <tr>
-                <th>Timestamp</th>
+                <th>Server TS</th><th>Client TS</th>
                 <th>Source Addr</th><th>Visitor id</th><th>Session id</th><th>Page</th>
                 <th>Referer</th><th>Evt. type</th><th>Visitor params</th>
                 <th>Session params</th><th>Event params</th><th>User-Agent</th>
@@ -123,7 +123,8 @@ background-color:#DDF;
     	for (var i in data) {
     	    var line = data[i];
     	    html += "<tr class=\"row_" + (i%2 == 0 ? "even" : "odd") + "\">";
-    	    html += "<td>" + new Date(line.now).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
+    	    html += "<td>" + new Date(line.serverTS).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
+    	    html += "<td>" + new Date(line.clientTS).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
     	    html += "<td>" + line.origAddress + "</td>";
     	    html += "<td>" + line.visitorId + "</td>";
     	    html += "<td>" + line.sessionId + "</td>";

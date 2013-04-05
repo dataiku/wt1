@@ -26,7 +26,7 @@ public class PixelServlet extends HttpServlet {
 
     private static final String PIXEL_PATH = "/WEB-INF/spixel.gif";
 
-    public static final String CACHEKILL_PARAM = "__wt1ts";
+    public static final String CLIENTTS_PARAM = "__wt1ts";
     public static final String TRACKTYPE_PARAM = "__wt1ty";
     public static final String REFERRER_PARAM = "__wt1ref";
 

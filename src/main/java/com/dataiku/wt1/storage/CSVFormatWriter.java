@@ -3,6 +3,10 @@ package com.dataiku.wt1.storage;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+
 import com.dataiku.wt1.TrackedRequest;
 
 public class CSVFormatWriter {
@@ -20,17 +24,21 @@ public class CSVFormatWriter {
     }
 
     public static String makeHeaderLine() {
-        return "#timestamp\tclient_addr\tvisitor_id\tlocation\treferer\tuser-agent\ttype\tvisitor_params\tsession_params\tevent_params\t" +
+        return "#server_ts\tclient_ts\tclient_addr\tvisitor_id\tlocation\treferer\tuser-agent\t"+
+                "type\tvisitor_params\tsession_params\tevent_params\t" +
                 "br_width\tbr_height\tsc_width\tsc_height\tbr_lang\ttz_off\n";
-    }    
+    }
+    
+    static DateTimeFormatter isoFormatter = ISODateTimeFormat.dateHourMinuteSecondMillis().withZone(DateTimeZone.UTC);
 
     /**
      * Write the line of log for one request
      */
     public static String makeLogLine(TrackedRequest req) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss.SSS");
         StringBuilder sb = new StringBuilder();
-        sb.append(sdf.format(new Date(req.now)));
+        sb.append(isoFormatter.print(req.serverTS));
+        sb.append('\t');
+        sb.append(isoFormatter.print(req.clientTS));
         sb.append('\t');
         sb.append(req.origAddress);
         sb.append('\t');
