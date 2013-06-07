@@ -19,7 +19,6 @@ color: red;
     padding-left: 1em;
     padding-bottom: 0.2em;
     padding-top: 0.2em;
-    
 }
 
 .counters_row td span.legend {
@@ -48,6 +47,18 @@ background-color:#DDF;
 #last_queries td {
     font-size:12px;
 }
+
+#last_queries td.large {
+  max-width:190px;
+  text-overflow:ellipsis;
+  overflow:hidden;
+}
+#last_queries td.forcesmall {
+  max-width:80px;
+  text-overflow:ellipsis;
+  overflow:hidden;
+}
+
 
 #last_queries tr.row_even td {
     background-color:#EEF;
@@ -107,7 +118,6 @@ background-color:#DDF;
                 <th>Source Addr</th><th>Visitor id</th><th>Session id</th><th>Page</th>
                 <th>Referer</th><th>Evt. type</th><th>Visitor params</th>
                 <th>Session params</th><th>Event params</th><th>User-Agent</th>
-                <th>Sizes</th><th>Br. Lang</th><th>TZ</th></tr>
         </thead>
         <tbody>
         </tbody>
@@ -123,21 +133,18 @@ background-color:#DDF;
     	for (var i in data) {
     	    var line = data[i];
     	    html += "<tr class=\"row_" + (i%2 == 0 ? "even" : "odd") + "\">";
-    	    html += "<td>" + new Date(line.serverTS).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
-    	    html += "<td>" + new Date(line.clientTS).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
-    	    html += "<td>" + line.origAddress + "</td>";
-    	    html += "<td>" + line.visitorId + "</td>";
-    	    html += "<td>" + line.sessionId + "</td>";
-    	    html += "<td>" + (line.page ? line.page : "-") + "</td>";
-    	    html += "<td>" + (line.referer ? line.referer : "-") + "</td>";
-    	    html += "<td>" + (line.type ? line.type : "-") + "</td>";
-    	    html += "<td>" + (line.visitorParams ? line.visitorParams : "-")+ "</td>";
-    	    html += "<td>" + (line.sessionParams ? line.sessionParams : "-") + "</td>";
-    	    html += "<td>" + (line.eventParams ? line.eventParams : "-") + "</td>";
-    	    html += "<td>" + line.ua + "</td>";
-    	    html += "<td>B=" + line.browserWidth + "x" + line.browserHeight + " S=" + line.screenWidth + "x" + line.screenHeight + "</td>";
-    	    html += "<td>" + line.browserLanguage + "</td>";
-    	    html += "<td>" + line.tzOffset + "</td>";
+    	    html += '<td>' + new Date(line.clientTS).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
+    	    html += '<td>' + new Date(line.serverTS).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
+    	    html += '<td>' + line.origAddress + "</td>";
+    	    html += '<td class="forceSmall" title="'+line.visitorId+'">' + line.visitorId + "</td>";
+    	    html += '<td class="forceSmall" title="' + line.sessionId + '">' + line.sessionId + "</td>";
+    	    html += '<td class="large" title="' + (line.page ? line.page : "-") + '">' + (line.page ? line.page : "-") + "</td>";
+    	    html += '<td class="large"  title="' + (line.referer?line.referer:"-") + '">' + (line.referer ? line.referer : "-") + "</td>";
+    	    html += '<td>' + (line.type ? line.type : "-") + "</td>";
+    	    html += '<td class="large" title="'+ (line.visitorParams ? line.visitorParams : "-")+'">' + (line.visitorParams ? line.visitorParams : "-")+ "</td>";
+    	    html += '<td class="large" title="'+ (line.sessionParams ? line.sessionParams : "-")+ '">' + (line.sessionParams ? line.sessionParams : "-") + "</td>";
+    	    html += '<td class="large" title="'+ (line.eventParams ? line.eventParams : "-") + '">' + (line.eventParams ? line.eventParams : "-") + "</td>";
+    	    html += '<td class="large" title="'+line.ua + '">' + line.ua + "</td>";
     	}
     	$("#last_queries tbody").html(html);
     }
