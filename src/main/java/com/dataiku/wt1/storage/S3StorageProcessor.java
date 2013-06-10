@@ -17,8 +17,10 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.dataiku.wt1.ProcessingQueue;
 import com.dataiku.wt1.ProcessingQueue.Stats;
+import com.dataiku.wt1.ConfigConstants;
 import com.dataiku.wt1.TrackedRequest;
 import com.dataiku.wt1.TrackingRequestProcessor;
+import com.dataiku.wt1.Utils;
 
 /**
  * S3 implementation of the storage engine.
@@ -38,6 +40,7 @@ public class S3StorageProcessor implements TrackingRequestProcessor{
     private File tmpFolder;
     private String bucketName;
     private int newFileTriggerSize;
+    private CSVFormatWriter csvWriter;
 
     public static final String NEW_FILE_TRIGGER_PARAM = "newFileTriggerSize";
     public static final String TMP_FOLDER_PARAM = "tmpFolder";
@@ -52,7 +55,7 @@ public class S3StorageProcessor implements TrackingRequestProcessor{
         
         fileOS = new FileOutputStream(tmpFile);
         gzOS = new GZIPOutputStream(fileOS);
-        gzOS.write(CSVFormatWriter.makeHeaderLine().getBytes("utf8"));
+        gzOS.write(csvWriter.makeHeaderLine().getBytes("utf8"));
         writtenBeforeGZ = 0;
         writtenEvents = 0;
     }
@@ -98,6 +101,12 @@ public class S3StorageProcessor implements TrackingRequestProcessor{
         BasicAWSCredentials creds = new BasicAWSCredentials(params.get(ACCESS_KEY_PARAM), params.get(SECRET_KEY_PARAM));
         s3client = new AmazonS3Client(creds);
         
+        this.csvWriter = new CSVFormatWriter(
+                Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_VISITOR_PARAMS)),
+                Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_SESSION_PARAMS)),
+                Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_EVENT_PARAMS)));
+        
+        
         initBuffer();
     }
 
@@ -107,7 +116,7 @@ public class S3StorageProcessor implements TrackingRequestProcessor{
             logger.trace("Processing request, curWritten=" + writtenBeforeGZ);
         }
 
-        String line = CSVFormatWriter.makeLogLine(req);
+        String line = csvWriter.makeLogLine(req);
         byte[] data = line.getBytes("utf8");
         writtenBeforeGZ += data.length;
         writtenEvents++;
