@@ -4,6 +4,10 @@
 /* global _wt1Q:true, console:false */
 /* jshint sub:true, eqnull:true */
 
+var trackURL =  "http://localhost:8080/wt1/public/p.gif";
+var sessionLifetimeMinutes = 3;
+var visitorLifeTimeMinutes = 2 * 365 * 24 * 60;
+
 // Add Object.keys support for IE, without touching the global namespace
 if (!Object.keys) {
   Object.wt1keys = (function () {
@@ -43,17 +47,12 @@ if (!Object.keys) {
   Object.wt1keys = function(o) { return Object.keys(o); };
 }
 
+/* Private constants */
+var wt1spc = "__wt1spc", wt1vpc = "__wt1vpc";
 
 function W1TTracker() {
-    this.trackURL =  "http://localhost:8080/wt1/public/p.gif";
+    this.trackURL = trackURL;
     this.debugEnabled = false;
-    this.setVisitorParams = {};
-    this.delVisitorParams = [];
-    this.clearVisitorParams = false;
-    this.setSessionParams = {};
-    this.delSessionParams = [];
-    this.clearSessionParams = false;
-
     this.sizeDetails = true;
 }
 
@@ -64,9 +63,9 @@ W1TTracker.prototype.debug = function(x) {
 W1TTracker.prototype.isArray = function(a){
     if (a == null) { return false; }
     if(Array.isArray) {
-        return Array.isArray(a);   
+        return Array.isArray(a);
     } else {
-        return (typeof(a) === 'object' && a instanceof Array);        
+        return (typeof(a) === 'object' && a instanceof Array);
     }
 };
 
@@ -75,37 +74,117 @@ W1TTracker.prototype.isObject = function(a) {
     return typeof(a) === 'object';
 };
 
+/* Encode a query string from an object { a:1, b:"test 1" } --> "a=1&b=test+1" */
+W1TTracker.prototype.encodeQS = function(params) {
+    var urlParams = [];
+    for (var p in params) {
+        if (params.hasOwnProperty(p)) {
+            urlParams.push(encodeURIComponent(p) + "=" + encodeURIComponent(params[p]));
+        }
+    }
+    return urlParams.join("&").replace("%20", "+"); 
+};
+
+W1TTracker.prototype.decodeQS = function(qs) {
+    if (qs === "") { return {}; }
+    var b = {};
+    var chunks = qs.split("&");
+    for (var i = 0; i < chunks.length; ++i) {
+        var subchunks= chunks[i].split('=');
+        if (subchunks.length !== 2) { continue; }
+        b[subchunks[0]] = decodeURIComponent(subchunks[1].replace(/\+/g, " "));
+    }
+    return b;
+};
+
+/* Encode a query string from an array of values: [a,b] --> "a=true&b=true" */
+W1TTracker.prototype.encodeQSBooleans = function(params) {
+    var urlParams = [];
+    for (var p in params){
+        if (params.hasOwnProperty(p)) {
+            urlParams.push(encodeURIComponent(params[p]) + "=true");
+        }
+    }
+    return urlParams.join("&").replace("%20", "+"); 
+};
+
+W1TTracker.prototype.getCookie = function(ckie) {
+    var i, chunks;
+    var cookies = document.cookie.split('; ');
+    for (i = 0; i < cookies.length; i++) {
+        chunks = cookies[i].split('=');
+        if (chunks[0] === ckie) {
+            return decodeURIComponent(chunks[1]);
+        }
+    }
+    return null;
+};
+
+W1TTracker.prototype.setCookie = function(name, value, lifeMinutes){
+    var ckie = name + '=' + encodeURIComponent(value) + "; ";
+    var expr = new Date(new Date().getTime() + lifeMinutes * 60 * 1000);
+    ckie += "expires=" + expr.toGMTString() + "; ";
+    ckie += "path=/; ";
+    ckie += "domain=" + document.location.host + "; ";
+    document.cookie = ckie;
+};
+
+W1TTracker.prototype.getCookieAsMap = function(ckieName) {
+    var ckie = this.getCookie(ckieName);
+    if (ckie == null) {
+        return {};
+    } else {
+        return this.decodeQS(ckie);
+    }
+};
+
+W1TTracker.prototype.setCookieFromMap = function(name, map, lifeMinutes) {
+    var qs = this.encodeQS(map);
+    this.setCookie(name, qs, lifeMinutes);
+};
+
 W1TTracker.prototype.fillSizeParams = function(params) {
     var root= document.documentElement;
 
-    params.__wt1bw = window.innerWidth || root.clientWidth || document.body.clientWidth, 
+    params.__wt1bw = window.innerWidth || root.clientWidth || document.body.clientWidth;
     params.__wt1bh = window.innerHeight || root.clientHeight || document.body.clientHeight;
     params.__wt1sw = window.screen.width;
     params.__wt1sh = window.screen.height;
 };
 
 W1TTracker.prototype.push = function(command) {
+    var params;
     if (!this.isArray(command)) {
         throw "Unexpected type as input of push :" + typeof(command); 
     }
-    
+
     if (command[0] === "setSizeCapture") {
         this.sizeDetails = command[1] === "true" ? true : false;
+
     /* Visitor params */
     } else if (command[0] === "setVisitorParam") {
-        this.setVisitorParams[command[1]] = command[2];
+        params = this.getCookieAsMap(wt1vpc);
+        params[command[1]] = command[2];
+        this.setCookieFromMap(wt1vpc, params, visitorLifeTimeMinutes);
     } else if (command[0] === "delVisitorParam") {
-        this.delVisitorParams.push(command[1]);
+        params = this.getCookieAsMap(wt1vpc);
+        delete params[command[1]];
+        this.setCookieFromMap(wt1vpc, params, visitorLifeTimeMinutes);
     } else if (command[0] === "clearVisitorParams") {
-        this.clearVisitorParams = true;
+        this.setCookieFromMap(wt1vpc, {}, visitorLifeTimeMinutes);
+
     /* Session params */
     } else if (command[0] === "setSessionParam") {
-        this.setSessionParams[command[1]] = command[2];
+        params = this.getCookieAsMap(wt1spc);
+        params[command[1]] = command[2];
+        this.setCookieFromMap(wt1spc, params, sessionLifetimeMinutes);
     } else if (command[0] === "delSessionParam") {
-        this.delSessionParams.push(command[1]);
+        params = this.getCookieAsMap(wt1spc);
+        delete params[command[1]];
+        this.setCookieFromMap(wt1spc, params, sessionLifetimeMinutes);
     } else if (command[0] === "clearSessionParams") {
-        this.clearSessionParams = true;
- 
+         this.setCookieFromMap(wt1spc, {}, sessionLifetimeMinutes);
+
     } else if (command[0] === "trackPage") {
         if (command.length < 2 || command[1] == null) {
             // No param or null param is ok
@@ -135,26 +214,26 @@ W1TTracker.prototype.push = function(command) {
     }
 };
 
-/* Encode a query string from an object { a:1, b:"test 1" } --> "a=1&b=test+1" */
-W1TTracker.prototype.encodeQS = function(params) {
-    var urlParams = [];
-    for (var p in params) {
-        if (params.hasOwnProperty(p)) {
-            urlParams.push(encodeURIComponent(p) + "=" + encodeURIComponent(params[p]));
-        }
+W1TTracker.prototype.getVisitorId = function() {
+    var visitorId = this.getCookie("__wt1vic");
+    if (visitorId == null) {
+        visitorId = Math.floor((1 + Math.random()) * 0x10000000).toString(16).substring(1) +
+             Math.floor((1 + Math.random()) * 0x10000000).toString(16);
     }
-    return urlParams.join("&").replace("%20", "+"); 
+    /* Always set the cookie to refresh its expiration time */
+    this.setCookie("__wt1vic", visitorId, visitorLifeTimeMinutes);
+    return visitorId;
 };
 
-/* Encode a query string from an array of values: [a,b] --> "a=true&b=true" */
-W1TTracker.prototype.encodeQSBooleans = function(params) {
-    var urlParams = [];
-    for (var p in params){
-        if (params.hasOwnProperty(p)) {
-            urlParams.push(encodeURIComponent(params[p]) + "=true");
-        }
+W1TTracker.prototype.getSessionId = function() {
+    var sessionId = this.getCookie("__wt1sic");
+    if (sessionId == null) {
+        sessionId = Math.floor((1 + Math.random()) * 0x10000000).toString(16).substring(1) +
+             Math.floor((1 + Math.random()) * 0x10000000).toString(16);
     }
-    return urlParams.join("&").replace("%20", "+"); 
+    /* Always set the cookie to refresh its expiration time */
+    this.setCookie("__wt1sic", sessionId, sessionLifetimeMinutes);
+    return sessionId;
 };
 
 W1TTracker.prototype.track = function(type, params) {
@@ -164,34 +243,17 @@ W1TTracker.prototype.track = function(type, params) {
     params["__wt1tzo"] = new Date().getTimezoneOffset();
     params["__wt1lang"] = navigator.language || navigator.userLanguage;
 
-    if (this.sizeDetails) {
-        this.fillSizeParams(params);
+    params["__wt1vic"] = this.getVisitorId();
+    params["__wt1sic"] = this.getSessionId();
+    if (this.getCookie(wt1vpc) != null) {
+        params[wt1vpc] = this.getCookie(wt1vpc);
+    }
+    if (this.getCookie("__wt1spc") != null) {
+        params[wt1spc] = this.getCookie(wt1spc);
     }
 
-    /* If some params have been set/removed/cleared, send them in the request */
-    if (Object.wt1keys(this.setVisitorParams).length > 0) {
-        params["__wt1vpsa"] = this.encodeQS(this.setVisitorParams);
-        this.setVisitorParams = {};
-    }
-    if (this.delVisitorParams.length > 0) {
-        params["__wt1vpda"] = this.encodeQSBooleans(this.delVisitorParams);
-        this.delVisitorParams = [];
-    }
-    if (this.clearVisitorParams === true) {
-        params["__wt1vpca"] = "true";
-        this.clearVisitorParams = false;
-    }
-    if (Object.wt1keys(this.setSessionParams).length > 0) {
-        params["__wt1spsa"] = this.encodeQS(this.setSessionParams);
-        this.setSessionParams = {};
-    }
-    if (this.delSessionParams.length > 0) {
-        params["__wt1spda"] = this.encodeQSBooleans(this.delSessionParams);
-        this.delSessionParams = [];
-    }
-    if (this.clearSessionParams === true) {
-        params["__wt1spca"] = "true";
-        this.clearSessionParams = false;
+    if (this.sizeDetails) {
+        this.fillSizeParams(params);
     }
 
     /* Encode the final query string */

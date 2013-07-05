@@ -19,6 +19,9 @@ public class TrackedRequest {
     public String visitorParams;
     /** Value of the sesion params, encoded as an HTTP query string */
     public String sessionParams;
+    
+    /** If third-party cookies are enabled, value of the "global" (cross-site) cookie */
+    public String globalVisitorId;
 
     /** URL of the page from which the tracking event originated */
     public String page;
@@ -101,12 +104,10 @@ public class TrackedRequest {
             } else if (e.getKey().equals(PixelServlet.BROWSER_LANG_PARAM)) {
                 browserLanguage = e.getValue().length > 0 ? e.getValue()[0] : null;
             } else if (
-                    e.getKey().equals(PixelServlet.SESSION_PARAMS_SET_ARG) ||
-                    e.getKey().equals(PixelServlet.SESSION_PARAMS_DEL_ARG) || 
-                    e.getKey().equals(PixelServlet.SESSION_PARAMS_CLEAR_ARG) || 
-                    e.getKey().equals(PixelServlet.VISITOR_PARAMS_SET_ARG) ||
-                    e.getKey().equals(PixelServlet.VISITOR_PARAMS_DEL_ARG) || 
-                    e.getKey().equals(PixelServlet.VISITOR_PARAMS_CLEAR_ARG)) { 
+                    e.getKey().equals(PixelServlet.VISITOR_ID_COOKIE) ||
+                    e.getKey().equals(PixelServlet.SESSION_ID_COOKIE) || 
+                    e.getKey().equals(PixelServlet.SESSION_PARAMS_COOKIE) || 
+                    e.getKey().equals(PixelServlet.VISITOR_PARAMS_COOKIE)) {
                 continue; 
             } else {
                 out.put(e.getKey(), e.getValue());
