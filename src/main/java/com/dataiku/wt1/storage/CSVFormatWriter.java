@@ -9,6 +9,7 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
+import com.dataiku.wt1.ProcessingQueue;
 import com.dataiku.wt1.TrackedRequest;
 import com.dataiku.wt1.Utils;
 
@@ -32,17 +33,22 @@ public class CSVFormatWriter {
         this.inlinedVP = inlinedVP;
         this.inlinedSP = inlinedSP;
         this.inlinedEP = inlinedEP;
+        this.thirdPartyCookies =  ProcessingQueue.getInstance().isThirdPartyCookies();
     }
 
+    private boolean thirdPartyCookies;
     private Set<String> inlinedVP;
     private Set<String> inlinedSP;
     private Set<String> inlinedEP;
 
 
     public String makeHeaderLine() {
-        String s = "#server_ts\tclient_ts\tclient_addr\tvisitor_id\tlocation\treferer\tuser-agent\t"+
+        String s = "#server_ts\tclient_ts\tclient_addr\tvisitor_id\tsession_id\tlocation\treferer\tuser-agent\t"+
                 "type\tvisitor_params\tsession_params\tevent_params\t" +
                 "br_width\tbr_height\tsc_width\tsc_height\tbr_lang\ttz_off";
+       if (thirdPartyCookies) {
+           s += "\tglobal_visitor_id";
+       }
         for (String inlined : inlinedVP) {
             s += "\t" +inlined;
         }
@@ -68,6 +74,8 @@ public class CSVFormatWriter {
         sb.append(req.origAddress);
         sb.append('\t');
         sb.append(req.visitorId);
+        sb.append("\t");
+        sb.append(req.sessionId);
         sb.append("\t\"");
         sb.append(escape(req.page));
         sb.append("\"\t\"");
@@ -94,6 +102,10 @@ public class CSVFormatWriter {
         sb.append(req.browserLanguage);
         sb.append("\"\t");
         sb.append(req.tzOffset);
+        if (thirdPartyCookies) {
+            sb.append("\t");
+            sb.append(req.globalVisitorId);
+        }
 
         if (req.visitorParams != null && inlinedVP.size() > 0) {
             doInline(Utils.decodeQueryString(req.visitorParams), inlinedVP, sb);

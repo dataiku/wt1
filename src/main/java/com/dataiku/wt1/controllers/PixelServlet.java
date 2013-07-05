@@ -58,10 +58,7 @@ public class PixelServlet extends HttpServlet {
             throw new ServletException(e);
         }
 
-        String tpc = ProcessingQueue.getInstance().getConfiguration().getProperty(ConfigConstants.SEND_THIRD_PARTY_COOKIE);
-        if (tpc != null && tpc.equalsIgnoreCase("true")) {
-            thirdPartyCookie = true;
-        }
+        thirdPartyCookie = ProcessingQueue.getInstance().isThirdPartyCookies();
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {

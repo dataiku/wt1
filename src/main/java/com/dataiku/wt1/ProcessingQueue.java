@@ -109,6 +109,15 @@ public class ProcessingQueue {
         return configuration;
     }
     
+    public boolean isThirdPartyCookies() {
+        String tpc = ProcessingQueue.getInstance().getConfiguration().getProperty(ConfigConstants.SEND_THIRD_PARTY_COOKIE);
+        if (tpc != null && tpc.equalsIgnoreCase("true")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
     public void configure(Properties props) throws Exception {
         this.configuration = props;
         /* Global config */
