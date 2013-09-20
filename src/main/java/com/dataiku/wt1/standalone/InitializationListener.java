@@ -3,21 +3,14 @@ package com.dataiku.wt1.standalone;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import com.dataiku.wt1.ProcessingQueue;
-import com.dataiku.wt1.TrackingRequestProcessor;
-
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.helpers.Loader;
 
 /**
  * Backend initialization

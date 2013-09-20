@@ -36,7 +36,7 @@
     </target>
 
     <target name="resolve"  depends="install-ivy" description="--> retrieve dependencies with ivy">
-        <ivy:retrieve pattern="${ilib.dir}/[conf]/[artifact]-[revision].[ext]" />
+      <ivy:retrieve pattern="${ilib.dir}/[conf]/[artifact]-[revision].[ext]" />
     </target>
 
     <path id="build.libpath">
@@ -44,8 +44,22 @@
   	</path>
 
     <target name="compile" depends="resolve">
-        <mkdir dir="${build.dir}/classes" />
-	<javac srcdir="${src.dir}" destdir="${build.dir}/classes" classpathref="build.libpath" />
+      <mkdir dir="${build.dir}/classes" />
+	    <javac target="1.6" source="1.6" srcdir="${src.dir}" destdir="${build.dir}/classes" 
+            classpathref="build.libpath" encoding="iso-8859-1" includeantruntime="false" >
+        <compilerarg value="-Xlint:all" />
+        <compilerarg value="-Xlint:-path" />
+        <compilerarg value="-Xlint:unchecked" />
+        <compilerarg value="-Xlint:cast" />
+        <compilerarg value="-Xlint:deprecation" />
+        <compilerarg value="-Xlint:empty" />
+        <compilerarg value="-Xlint:fallthrough" />
+        <compilerarg value="-Xlint:overrides" />
+        <compilerarg value="-Xlint:rawtypes" />
+        <compilerarg value="-Xlint:static" />
+        <compilerarg value="-Xlint:try" />
+        <compilerarg value="-Xlint:varargs" />
+      </javac>
     </target>
 
     <target name="war-standalone" depends="compile">
@@ -60,7 +74,9 @@
 
      <mkdir dir="${build.war-standalone.tmp}/WEB-INF/lib" />
        <copy todir="${build.war-standalone.tmp}/WEB-INF/lib">
-        <fileset dir="${ilib.dir}/core" />
+        <fileset dir="${ilib.dir}/core">
+          <exclude name="servlet-api-*.jar"/>
+        </fileset>
       </copy>
       <copy todir="${build.war-standalone.tmp}/WEB-INF/classes">
         <fileset dir="${build.dir}/classes" />
@@ -95,7 +111,4 @@
       <mkdir dir="${dist.dir}" />
       <war destfile="${dist.dir}/${war-gae.file}" basedir="${build.war-gae.tmp}" />
     </target>
-
-
-
 </project>

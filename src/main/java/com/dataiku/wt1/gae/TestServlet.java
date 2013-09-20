@@ -20,8 +20,10 @@ import com.google.appengine.api.files.GSFileOptions.GSFileOptionsBuilder;
  * Google App Engine implementation of the tracked request processor.
  * It stores data in the Google Cloud Storage.
  */
-public class TestServlet extends HttpServlet{
+public class TestServlet extends HttpServlet {
 	
+	private static final long serialVersionUID = 1L;
+
 	private String newFileName() {
 		long now = System.currentTimeMillis();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd/HH/mm-ss");

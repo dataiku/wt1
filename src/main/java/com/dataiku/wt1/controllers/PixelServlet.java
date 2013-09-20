@@ -15,7 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
-import com.dataiku.wt1.ConfigConstants;
 import com.dataiku.wt1.ProcessingQueue;
 import com.dataiku.wt1.TrackedRequest;
 import com.dataiku.wt1.UUIDGenerator;
@@ -62,7 +61,7 @@ public class PixelServlet extends HttpServlet {
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        long before = System.currentTimeMillis();
+        // long before = System.currentTimeMillis();
 
         TrackedRequest trackedReq = new TrackedRequest();
 

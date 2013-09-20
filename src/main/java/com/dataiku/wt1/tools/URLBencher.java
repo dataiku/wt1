@@ -72,6 +72,7 @@ public class URLBencher {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	public static void main(String[] args) throws Exception {
 		String url = args[0];
 		URL u = new URL(url);
