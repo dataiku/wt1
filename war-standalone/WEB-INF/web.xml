@@ -19,14 +19,14 @@
 		<url-pattern>/public/events</url-pattern>
 	</servlet-mapping>
 	
-	<!--  Monitoring servlet -->
+	<!--  Health-checking servlet -->
 	<servlet>
 		<servlet-name>isAlive</servlet-name>
 		<servlet-class>com.dataiku.wt1.controllers.IsAliveServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>isAlive</servlet-name>
-		<url-pattern>/public/isAlive</url-pattern>
+		<url-pattern>/isAlive</url-pattern>
 	</servlet-mapping>
 	
 	

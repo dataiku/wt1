@@ -14,10 +14,9 @@ import org.apache.log4j.Logger;
 import com.dataiku.wt1.ConfigConstants;
 import com.dataiku.wt1.ProcessingQueue;
 
+@SuppressWarnings("serial")
 public class IsAliveServlet extends HttpServlet {
 
-	private static final long serialVersionUID = 1L;
-	
 	private File maintenanceFile;
 
     @Override
