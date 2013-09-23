@@ -12,5 +12,6 @@ public class ConfigConstants {
     public static final String INLINED_VISITOR_PARAMS = "inlinedVisitorParams";
     public static final String INLINED_SESSION_PARAMS = "inlinedSessionParams";
     public static final String INLINED_EVENT_PARAMS = "inlinedEventParams";
+    
+    public static final String MAINTENANCE_FILE = "maintenanceFile";
 }
-

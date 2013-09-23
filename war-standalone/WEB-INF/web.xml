@@ -19,6 +19,16 @@
 		<url-pattern>/public/events</url-pattern>
 	</servlet-mapping>
 	
+	<!--  Monitoring servlet -->
+	<servlet>
+		<servlet-name>isAlive</servlet-name>
+		<servlet-class>com.dataiku.wt1.controllers.IsAliveServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>isAlive</servlet-name>
+		<url-pattern>/public/isAlive</url-pattern>
+	</servlet-mapping>
+	
 	
 	<!-- Internal Live View Console and handlers -->
 	<servlet>
