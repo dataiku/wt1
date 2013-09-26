@@ -19,6 +19,15 @@
 		<url-pattern>/public/events</url-pattern>
 	</servlet-mapping>
 	
+	<servlet>
+		<servlet-name>globalId</servlet-name>
+		<servlet-class>com.dataiku.wt1.controllers.GlobalIdServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>globalId</servlet-name>
+		<url-pattern>/public/globalId</url-pattern>
+	</servlet-mapping>
+	
 	<!--  Health-checking servlet -->
 	<servlet>
 		<servlet-name>isAlive</servlet-name>

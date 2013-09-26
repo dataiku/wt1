@@ -54,6 +54,6 @@ public class InitializationListener implements ServletContextListener {
         } catch (Exception e) {
             throw new Error("Could not create processing queue", e);
         }
-        logger.info("App started");
+        logger.info("Application started");
     }
 }

@@ -15,35 +15,41 @@
     script.async = "true";
     var script0 = document.getElementsByTagName("script")[0];
     script0.parentNode.insertBefore(script, script0);
+    
+    var script1 = document.createElement('script');
+    script1.src = "public/globalId?fun=showGlobalId";
+    script1.type = 'text/javascript';
+    script1.async = "true";
+    script0.parentNode.insertBefore(script1, script0);
   })();
+  
+  function showGlobalId(id) {
+	  document.getElementById("globalId").textContent = "ID = "+ id;
+  }
 </script>
 
-
 </head>
+
 <body>
-  
-    <input type="submit" id="s1" value="Track event S1"/>
-    <input type="submit" id="s2" value="Remove session param sp1" />
-    <input type="submit" id="s3" value="Add visitor param vp2" />
-    <input type="submit" id="s4" value="Clear visitor params" />
-  
-    <script>
+
+	<input type="submit" id="s1" value="Track event S1" />
+	<input type="submit" id="s2" value="Remove session param sp1" />
+	<input type="submit" id="s3" value="Add visitor param vp2" />
+	<input type="submit" id="s4" value="Clear visitor params" />
+	<div id="globalId">NO ID</div>
+
+	<script>
         /* Following calls will have these params set */
         _wt1Q.push(["setSessionParam", "sp1", "value1"]);
         _wt1Q.push(["setSessionParam", "sp2", "value2"]);
         document.getElementById("s1").onclick = function() { _wt1Q.push(["trackEvent", {"type": "button", "id" : "s1"}]); }
         
         /* After click on S2, sp1 will be removed */
-        document.getElementById("s2").onclick = function() { _wt1Q.push(["delSessionParam", "sp1"])};
+        document.getElementById("s2").onclick = function() { _wt1Q.push(["delSessionParam", "sp1"]) };
         /* After click on S3, vp2 will be added */
-        document.getElementById("s3").onclick = function() { _wt1Q.push(["setVisitorParam", "vp2", "vp2val"])};
+        document.getElementById("s3").onclick = function() { _wt1Q.push(["setVisitorParam", "vp2", "vp2val"]) };
 
-        document.getElementById("s4").onclick = function() { _wt1Q.push(["clearVisitorParams"])};
+        document.getElementById("s4").onclick = function() { _wt1Q.push(["clearVisitorParams"]) };
     </script>
-  
 
-
-
-  </body>
-
-
+</body>

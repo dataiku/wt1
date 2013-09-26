@@ -31,7 +31,7 @@ public class LiveDataServlet extends HttpServlet {
         resp.setContentType("application/json");
         String out = null;
         synchronized (di.stats) {
-            out=  new Gson().toJson(di);
+            out = new Gson().toJson(di);
         }
         resp.getWriter().write(out);
     }

@@ -6,7 +6,7 @@ public class UUIDGenerator {
 	public static String generate() {
 		StringBuilder sb = new StringBuilder();
 		UUID uuid = UUID.randomUUID();
-		sb.append(String.format("%16x%16x", uuid.getMostSignificantBits(), uuid.getLeastSignificantBits()));
+		sb.append(String.format("%016x%016x", uuid.getMostSignificantBits(), uuid.getLeastSignificantBits()));
 		return sb.toString();
 	}
 }

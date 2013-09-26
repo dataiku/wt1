@@ -133,18 +133,18 @@ background-color:#DDF;
     	for (var i in data) {
     	    var line = data[i];
     	    html += "<tr class=\"row_" + (i%2 == 0 ? "even" : "odd") + "\">";
-    	    html += '<td>' + new Date(line.clientTS).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
     	    html += '<td>' + new Date(line.serverTS).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
+    	    html += '<td>' + new Date(line.clientTS).format("yyyy/mm/dd-hh:MM:ss.l") + "</td>";
     	    html += '<td>' + line.origAddress + "</td>";
-    	    html += '<td class="forceSmall" title="'+line.visitorId+'">' + line.visitorId + "</td>";
+    	    html += '<td class="forceSmall" title="'+ line.visitorId +'">' + line.visitorId + "</td>";
     	    html += '<td class="forceSmall" title="' + line.sessionId + '">' + line.sessionId + "</td>";
     	    html += '<td class="large" title="' + (line.page ? line.page : "-") + '">' + (line.page ? line.page : "-") + "</td>";
-    	    html += '<td class="large"  title="' + (line.referer?line.referer:"-") + '">' + (line.referer ? line.referer : "-") + "</td>";
+    	    html += '<td class="large"  title="' + (line.referer ? line.referer:"-") + '">' + (line.referer ? line.referer : "-") + "</td>";
     	    html += '<td>' + (line.type ? line.type : "-") + "</td>";
     	    html += '<td class="large" title="'+ (line.visitorParams ? line.visitorParams : "-")+'">' + (line.visitorParams ? line.visitorParams : "-")+ "</td>";
     	    html += '<td class="large" title="'+ (line.sessionParams ? line.sessionParams : "-")+ '">' + (line.sessionParams ? line.sessionParams : "-") + "</td>";
     	    html += '<td class="large" title="'+ (line.eventParams ? line.eventParams : "-") + '">' + (line.eventParams ? line.eventParams : "-") + "</td>";
-    	    html += '<td class="large" title="'+line.ua + '">' + line.ua + "</td>";
+    	    html += '<td class="large" style="white-space:nowrap" title="'+ line.ua + '">' + line.ua + "</td>";
     	}
     	$("#last_queries tbody").html(html);
     }
