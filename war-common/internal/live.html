@@ -6,69 +6,79 @@
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <style>
 body {
-    font-family : Arial;
+	font-family: Arial;
 }
 
 #error {
-color: red;
+	color: red;
 }
 
 .counters_row td {
-    font-size:24px;
-    text-align: right;
-    padding-left: 1em;
-    padding-bottom: 0.2em;
-    padding-top: 0.2em;
+	font-size: 24px;
+	text-align: right;
+	padding-left: 1em;
+	padding-bottom: 0.2em;
+	padding-top: 0.2em;
 }
 
 .counters_row td span.legend {
-    font-size:14px;
+	font-size: 14px;
+}
+
+#flush_button {
+	font-size: 16px;
+}
+
+#flush_result {
+	font-size: 14px;
+	color: red;
 }
 
 tr#input {
-background-color:#FFD;
-}
-tr#storage {
-background-color:#DFD;
-}
-tr.forwarder {
-background-color:#DDF;
+	background-color: #FFD;
 }
 
+tr#storage {
+	background-color: #DFD;
+}
+
+tr.forwarder {
+	background-color: #DDF;
+}
 
 #last_queries {
-    border-collase: collapse;
+	border-collapse: collapse;
 }
 
 #last_queries th {
-    font-size: 12px;
+	font-size: 12px;
 }
 
 #last_queries td {
-    font-size:12px;
+	border: 1px white;
+	border-style: none solid;
+	font-size: 12px;
 }
 
 #last_queries td.large {
-  max-width:190px;
-  text-overflow:ellipsis;
-  overflow:hidden;
-}
-#last_queries td.forcesmall {
-  max-width:80px;
-  text-overflow:ellipsis;
-  overflow:hidden;
+	max-width: 190px;
+	text-overflow: ellipsis;
+	overflow: hidden;
 }
 
+#last_queries td.forcesmall {
+	max-width: 80px;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
 
 #last_queries tr.row_even td {
-    background-color:#EEF;
+	background-color: #EEF;
 }
+
 #last_queries tr.row_odd td {
-    background-color:#CCF;
+	background-color: #CCF;
 }
-
-
-
 </style>
 </head>
 <body>
@@ -103,6 +113,8 @@ background-color:#DDF;
                         <td id="created_files"></td>
                         <td id="saved_input_size"></td>
                         <td id="saved_gz_size"></td>
+                        <td />
+                        <td> <button id="flush_button">Flush</button><br /><span id="flush_result"></span></td>
                     </tr>
                 </table>
             </td>                  
@@ -127,6 +139,7 @@ background-color:#DDF;
     
     var prevNb = 0;
     var prevDate = 0;
+    var flushResultDate = 0;
     
     function drawLastQueries(data) {
     	var html = "";
@@ -153,11 +166,11 @@ background-color:#DDF;
         $("#received").html(data.receivedEvents + "<br /><span class=\"legend\">events received</span>");
         
         var date = new Date().getTime();
-        if (prevNb == 0) {
+        if (prevDate == 0) {
             $("#events_rate").html("N/A"+ "<br /><span class=\"legend\">events/s</span>");
         } else {
             var rate = (data.receivedEvents - prevNb)/(date-prevDate)*1000;
-            $("#events_rate").html(rate.toFixed(0) + "<br /><span class=\"legend\">events/s</span>");
+            $("#events_rate").html(rate.toFixed(1) + "<br /><span class=\"legend\">events/s</span>");
         }
         prevDate = date;
         prevNb = data.receivedEvents;
@@ -184,6 +197,27 @@ background-color:#DDF;
             html += "</tr></table></td></tr>";
             $("#counters").append($(html));
         }
+        
+        $("#flush_button").click(flush_button);
+        if (flushResultDate < date - 3000) {
+        	$("#flush_result").html("");
+        }
+    }
+    
+    function flush_button() {
+    	$.ajax({
+    		type : "POST",
+    		url : "flush",
+    		data : null,
+    		success : function(data) {
+    			$("#flush_result").html("Successful");
+    			flushResultDate = new Date().getTime();
+    		},
+    		error : function(data) {
+    			$("#flush_result").html("FAILED");
+    			flushResultDate = new Date().getTime();
+    		}
+    	});
     }
     
     function refresh() {
