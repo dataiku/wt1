@@ -1,7 +1,7 @@
 package com.dataiku.wt1.storage;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
@@ -17,15 +17,15 @@ import com.dataiku.wt1.TrackedRequest;
 import com.dataiku.wt1.TrackingRequestProcessor;
 import com.dataiku.wt1.Utils;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 /**
  * 
  */
 public class FSStorageProcessor implements TrackingRequestProcessor {
-    private ByteArrayOutputStream curBuf;
-    private GZIPOutputStream curBufGZ;
+    private File tmpFile;
+    private FileOutputStream fileOS;
+    private GZIPOutputStream gzOS;
     private int writtenBeforeGZ;
     private int writtenEvents;
     private long startDate;
@@ -39,21 +39,30 @@ public class FSStorageProcessor implements TrackingRequestProcessor {
     public static final String ROOT_PARAM = "rootDir";
 
     private void initBuffer() throws IOException {
-        curBuf = new ByteArrayOutputStream();
-        curBufGZ = new GZIPOutputStream(curBuf);
-        curBufGZ.write(csvWriter.makeHeaderLine().getBytes("utf8"));
+    	String name = CSVFormatWriter.newFileName(null);
+    	File dir = new File(new File(rootDir), name).getParentFile();
+    	dir.mkdirs();
+    	tmpFile = File.createTempFile("___", null, dir);
+    	logger.info("Creating new temporary file: " + tmpFile.getAbsolutePath());
+    	
+        fileOS = new FileOutputStream(tmpFile);
+        gzOS = new GZIPOutputStream(fileOS);
+        gzOS.write(csvWriter.makeHeaderLine().getBytes("utf8"));
         writtenEvents = 0;
         writtenBeforeGZ = 0;
         startDate = System.currentTimeMillis();
     }
 
     private synchronized void flushBuffer(boolean reinit) throws IOException {
-    	if (curBuf == null) {
+    	if (fileOS == null) {
     		// processor has already been shutdown
     		return;
     	}
-    	curBufGZ.flush();
-    	curBufGZ.close();
+    	gzOS.flush();
+    	gzOS.close();
+    	fileOS.flush();
+    	fileOS.close();
+    	long gzSize = tmpFile.length();
     	
     	if (writtenEvents > 0) {
     		// No instance for FS storage
@@ -62,25 +71,23 @@ public class FSStorageProcessor implements TrackingRequestProcessor {
     		File f = new File(new File(rootDir), name);
     		File dir = f.getParentFile();
     		dir.mkdirs();
-    		File tmp = File.createTempFile("___", null, dir);
-    		logger.info("Writing new file name=" + name + " (inSize=" + writtenBeforeGZ + " gzSize=" +  curBuf.size() + ")");
-    		FileUtils.writeByteArrayToFile(tmp, curBuf.toByteArray());
-    		tmp.renameTo(f);
-    		logger.info("File written and flushed");
+    		logger.info("Saving new file: " + name + " (events=" + writtenEvents + " inSize=" + writtenBeforeGZ + " gzSize=" +  gzSize + ")");
+    		tmpFile.renameTo(f);
 
     		Stats stats = ProcessingQueue.getInstance().getStats();
     		synchronized (stats) {
     			stats.createdFiles++;
     			stats.savedEvents += writtenEvents;
-    			stats.savedEventsGZippedSize += curBuf.size();
+    			stats.savedEventsGZippedSize += gzSize;
     			stats.savedEventsInputSize += writtenBeforeGZ;
     		}
     	} else {
     		logger.info("No events to flush");
+    		tmpFile.delete();
     	}
     	
-    	curBuf = null;
-    	curBufGZ = null;
+    	fileOS = null;
+    	gzOS = null;
     	if (reinit) {
     		initBuffer();
     	}
@@ -130,9 +137,9 @@ public class FSStorageProcessor implements TrackingRequestProcessor {
         writtenBeforeGZ += data.length;
         writtenEvents++;
 
-        curBufGZ.write(data);
+        gzOS.write(data);
         if (logger.isTraceEnabled()) {
-            logger.trace("Written " + writtenBeforeGZ + " -> " + curBuf.size());
+            logger.trace("Written events=" + writtenEvents + " bytes=" + writtenBeforeGZ);
         }
 
         if ((newFileTriggerSize > 0 && writtenBeforeGZ > newFileTriggerSize) ||
