@@ -69,7 +69,9 @@
         <fileset dir="war-common" />
       </copy>
       <copy todir="${build.war-standalone.tmp}">
-        <fileset dir="war-standalone" />
+        <fileset dir="war-standalone">
+        	<exclude name="**/config.properties" />
+        </fileset>
       </copy>
 
      <mkdir dir="${build.war-standalone.tmp}/WEB-INF/lib" />
@@ -95,7 +97,9 @@
         <fileset dir="war-common" />
       </copy>
       <copy todir="${build.war-gae.tmp}">
-        <fileset dir="war-gae" />
+        <fileset dir="war-gae">
+        	<exclude name="**/config.properties" />
+    	</fileset>
       </copy>
 
      <mkdir dir="${build.war-gae.tmp}/WEB-INF/lib" />

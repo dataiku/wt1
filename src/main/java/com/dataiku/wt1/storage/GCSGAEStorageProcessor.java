@@ -10,15 +10,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
 import org.apache.log4j.Logger;
 
 import com.dataiku.wt1.ConfigConstants;
 import com.dataiku.wt1.ProcessingQueue;
+import com.dataiku.wt1.ProcessingQueue.Stats;
 import com.dataiku.wt1.TrackedRequest;
 import com.dataiku.wt1.TrackingRequestProcessor;
 import com.dataiku.wt1.Utils;
-import com.dataiku.wt1.ProcessingQueue.Stats;
 import com.google.appengine.api.backends.BackendServiceFactory;
 import com.google.appengine.api.files.AppEngineFile;
 import com.google.appengine.api.files.FileService;
@@ -38,13 +37,16 @@ public class GCSGAEStorageProcessor implements TrackingRequestProcessor{
 	private GZIPOutputStream curBufGZ;
 	private int writtenBeforeGZ;
 	private int writtenEvents;
+    private long startDate;
 	private FileService fileService = FileServiceFactory.getFileService();
 
 	private String bucketName;
-	private int newFileTriggerSize;
+    private int newFileTriggerSize = 1024 * 1024;
+    private int newFileTriggerInterval = 0;
 	private CSVFormatWriter csvWriter;
 
-	public static final String NEW_FILE_TRIGGER_PARAM = "newFileTriggerSize";
+	public static final String NEW_FILE_TRIGGER_SIZE_PARAM = "newFileTriggerSize";
+    public static final String NEW_FILE_TRIGGER_INTERVAL_PARAM = "newFileTriggerInterval";
 	public static final String BUCKET_PARAM = "bucketName";
 
 	/**
@@ -63,40 +65,74 @@ public class GCSGAEStorageProcessor implements TrackingRequestProcessor{
 		curBufGZ.write(csvWriter.makeHeaderLine().getBytes("utf8"));
 		writtenBeforeGZ = 0;
 		writtenEvents = 0;
+        startDate = System.currentTimeMillis();
 	}
 
-	private void flushBuffer() throws IOException {
-	    String name = CSVFormatWriter.newFileName("b" + BackendServiceFactory.getBackendService().getCurrentInstance());
-
-		logger.info("Opening new file name=" + name);
-		AppEngineFile file = newFile(name);
-		FileWriteChannel channel = fileService.openWriteChannel(file, true);
-		
+	private synchronized void flushBuffer(boolean reinit) throws IOException {
+		if (curBuf == null) {
+			// processor has already been shutdown
+			return;
+		}
 		curBufGZ.flush();
 		curBufGZ.close();
-		logger.info("Writing new file name=" + name + " inSize=" + writtenBeforeGZ + " gzSize=" +  curBuf.size() + ")");
-		channel.write(ByteBuffer.wrap(curBuf.toByteArray()));
-		logger.info("Closing new file");
-		channel.closeFinally();
-		logger.info("Closed new file");
-		
-		Stats stats = ProcessingQueue.getInstance().getStats();
-		synchronized (stats) {
-		    stats.createdFiles++;
-		    stats.savedEvents += writtenEvents;
-		    stats.savedEventsGZippedSize += curBuf.size();
-		    stats.savedEventsInputSize += writtenBeforeGZ;
+
+		if (writtenEvents > 0) {
+			String name = CSVFormatWriter.newFileName("b" + BackendServiceFactory.getBackendService().getCurrentInstance());
+
+			logger.info("Opening new file name=" + name);
+			AppEngineFile file = newFile(name);
+			FileWriteChannel channel = fileService.openWriteChannel(file, true);
+
+			logger.info("Writing new file name=" + name + " inSize=" + writtenBeforeGZ + " gzSize=" +  curBuf.size() + ")");
+			channel.write(ByteBuffer.wrap(curBuf.toByteArray()));
+			logger.info("Closing new file");
+			channel.closeFinally();
+			logger.info("Closed new file");
+
+			Stats stats = ProcessingQueue.getInstance().getStats();
+			synchronized (stats) {
+				stats.createdFiles++;
+				stats.savedEvents += writtenEvents;
+				stats.savedEventsGZippedSize += curBuf.size();
+				stats.savedEventsInputSize += writtenBeforeGZ;
+			}
+		} else {
+			logger.info("No events to flush");
 		}
-				
+
 		curBuf = null;
 		curBufGZ = null;
+		if (reinit) {
+			initBuffer();
+		}
 	}
 
 	@Override
 	public void init(Map<String, String> params) throws IOException {
-		this.bucketName = params.get(BUCKET_PARAM);
-		this.newFileTriggerSize = Integer.parseInt(params.get(NEW_FILE_TRIGGER_PARAM));
-		this.csvWriter = new CSVFormatWriter(
+		bucketName = params.get(BUCKET_PARAM);
+        if (bucketName == null) {
+    		logger.error("Missing configuration parameter " + BUCKET_PARAM);
+    		throw new IllegalArgumentException(BUCKET_PARAM);
+        }
+        String fileSizeParam = params.get(NEW_FILE_TRIGGER_SIZE_PARAM);
+        if (fileSizeParam != null) {
+        	try {
+        		newFileTriggerSize = Integer.parseInt(fileSizeParam);
+        	} catch (NumberFormatException e) {
+        		logger.error("Invalid value for configuration parameter " + NEW_FILE_TRIGGER_SIZE_PARAM);
+        		throw e;
+        	}
+        }
+        String fileIntervalParam = params.get(NEW_FILE_TRIGGER_INTERVAL_PARAM);
+        if (fileIntervalParam != null) {
+        	try {
+        		newFileTriggerInterval = Integer.parseInt(fileIntervalParam);
+        	} catch (NumberFormatException e) {
+        		logger.error("Invalid value for configuration parameter " + NEW_FILE_TRIGGER_INTERVAL_PARAM);
+        		throw e;   		
+        	}
+        }
+		csvWriter = new CSVFormatWriter(
                 Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_VISITOR_PARAMS)),
                 Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_SESSION_PARAMS)),
                 Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_EVENT_PARAMS)));
@@ -121,18 +157,23 @@ public class GCSGAEStorageProcessor implements TrackingRequestProcessor{
 		    logger.trace("Written " + writtenBeforeGZ + " -> " + curBuf.size());
 		}
 
-		if (writtenBeforeGZ > newFileTriggerSize) {
-			flushBuffer();
-			initBuffer();
-		}
+        if ((newFileTriggerSize > 0 && writtenBeforeGZ > newFileTriggerSize) ||
+            	(newFileTriggerInterval > 0 && System.currentTimeMillis() > startDate + newFileTriggerInterval * 1000L)) {
+            	flushBuffer(true);
+            }
 	}
 
 	@Override
 	public void shutdown() throws IOException {
-		flushBuffer();
+		flushBuffer(false);
 	}
 	
-    @Override
+	@Override
+	public void flush() throws IOException {
+		flushBuffer(true);		
+	}
+
+	@Override
     public void service(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException {
     }

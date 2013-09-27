@@ -34,15 +34,18 @@ public class S3StorageProcessor implements TrackingRequestProcessor{
     private GZIPOutputStream gzOS;
     private int writtenBeforeGZ;
     private int writtenEvents;
+    private long startDate;
 
     private AmazonS3Client s3client;
     private String instanceId;
     private File tmpFolder;
     private String bucketName;
-    private int newFileTriggerSize;
+    private int newFileTriggerSize = 1024 * 1024;
+    private int newFileTriggerInterval = 0;
     private CSVFormatWriter csvWriter;
 
-    public static final String NEW_FILE_TRIGGER_PARAM = "newFileTriggerSize";
+    public static final String NEW_FILE_TRIGGER_SIZE_PARAM = "newFileTriggerSize";
+    public static final String NEW_FILE_TRIGGER_INTERVAL_PARAM = "newFileTriggerInterval";
     public static final String TMP_FOLDER_PARAM = "tmpFolder";
     public static final String BUCKET_PARAM = "bucketName";
     public static final String ACCESS_KEY_PARAM = "accessKey";
@@ -51,60 +54,95 @@ public class S3StorageProcessor implements TrackingRequestProcessor{
 
     private void initBuffer() throws IOException {
         tmpFile = File.createTempFile("s3storage", null, tmpFolder);
-        logger.info("Initializing temporary storage to " +tmpFile);
+        logger.info("Initializing temporary storage to " + tmpFile);
         
         fileOS = new FileOutputStream(tmpFile);
         gzOS = new GZIPOutputStream(fileOS);
         gzOS.write(csvWriter.makeHeaderLine().getBytes("utf8"));
         writtenBeforeGZ = 0;
         writtenEvents = 0;
+        startDate = System.currentTimeMillis();
     }
 
-    private void flushBuffer() throws IOException {
-        gzOS.flush();
-        gzOS.close();
-        fileOS.flush();
-        fileOS.close();
-       
-        String name = CSVFormatWriter.newFileName(instanceId);
-        logger.info("Will write to S3, file=" + name + ", size=" + tmpFile.length());
-        s3client.putObject(bucketName, name, tmpFile);
-        logger.info("File written");
+    private synchronized void flushBuffer(boolean reinit) throws IOException {
+    	if (fileOS == null) {
+    		// processor has already been shutdown
+    		return;
+    	}
+    	gzOS.flush();
+    	gzOS.close();
+    	fileOS.flush();
+    	fileOS.close();
 
-        Stats stats = ProcessingQueue.getInstance().getStats();
-        synchronized (stats) {
-            stats.createdFiles++;
-            stats.savedEvents += writtenEvents;
-            stats.savedEventsGZippedSize += tmpFile.length();
-            stats.savedEventsInputSize += writtenBeforeGZ;
-        }
-        FileUtils.forceDelete(tmpFile);
-        tmpFile = null;
-        fileOS = null;
-        gzOS = null;
+    	if (writtenEvents > 0) {
+    		String name = CSVFormatWriter.newFileName(instanceId);
+    		logger.info("Will write to S3, file=" + name + ", size=" + tmpFile.length());
+    		s3client.putObject(bucketName, name, tmpFile);
+    		logger.info("File written");
+
+    		Stats stats = ProcessingQueue.getInstance().getStats();
+    		synchronized (stats) {
+    			stats.createdFiles++;
+    			stats.savedEvents += writtenEvents;
+    			stats.savedEventsGZippedSize += tmpFile.length();
+    			stats.savedEventsInputSize += writtenBeforeGZ;
+    		}
+    	} else {
+    		logger.info("No events to flush");
+    	}
+
+    	FileUtils.forceDelete(tmpFile);
+    	tmpFile = null;
+    	fileOS = null;
+    	gzOS = null;
+
+    	if (reinit) {
+    		initBuffer();
+    	}
     }
 
     @Override
     public void init(Map<String, String> params) throws IOException {
-        this.bucketName = params.get(BUCKET_PARAM);
-        this.newFileTriggerSize = Integer.parseInt(params.get(NEW_FILE_TRIGGER_PARAM));
-        String tmpFolder = params.get(TMP_FOLDER_PARAM);
-        if (tmpFolder != null) {
-            this.tmpFolder = new File(tmpFolder);
-            FileUtils.forceMkdir(this.tmpFolder);
+        bucketName = params.get(BUCKET_PARAM);
+        if (bucketName == null) {
+    		logger.error("Missing configuration parameter " + BUCKET_PARAM);
+    		throw new IllegalArgumentException(BUCKET_PARAM);
+        }
+        String fileSizeParam = params.get(NEW_FILE_TRIGGER_SIZE_PARAM);
+        if (fileSizeParam != null) {
+        	try {
+        		newFileTriggerSize = Integer.parseInt(fileSizeParam);
+        	} catch (NumberFormatException e) {
+        		logger.error("Invalid value for configuration parameter " + NEW_FILE_TRIGGER_SIZE_PARAM);
+        		throw e;
+        	}
+        }
+        String fileIntervalParam = params.get(NEW_FILE_TRIGGER_INTERVAL_PARAM);
+        if (fileIntervalParam != null) {
+        	try {
+        		newFileTriggerInterval = Integer.parseInt(fileIntervalParam);
+        	} catch (NumberFormatException e) {
+        		logger.error("Invalid value for configuration parameter " + NEW_FILE_TRIGGER_INTERVAL_PARAM);
+        		throw e;   		
+        	}
+        }
+        String tmpFolderParam = params.get(TMP_FOLDER_PARAM);
+        if (tmpFolderParam != null) {
+            tmpFolder = new File(tmpFolderParam);
+            FileUtils.forceMkdir(tmpFolder);
         } else {
-            this.tmpFolder = new File(System.getProperty("java.io.tmpdir"));
+            tmpFolder = new File(System.getProperty("java.io.tmpdir"));
         }
         
-        this.instanceId = params.get(INSTANCE_ID_PARAM);
+        instanceId = params.get(INSTANCE_ID_PARAM);
         
         BasicAWSCredentials creds = new BasicAWSCredentials(params.get(ACCESS_KEY_PARAM), params.get(SECRET_KEY_PARAM));
         s3client = new AmazonS3Client(creds);
         
-        this.csvWriter = new CSVFormatWriter(
-                Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_VISITOR_PARAMS)),
-                Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_SESSION_PARAMS)),
-                Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_EVENT_PARAMS)));
+        csvWriter = new CSVFormatWriter(
+        		Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_VISITOR_PARAMS)),
+        		Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_SESSION_PARAMS)),
+        		Utils.parseCSVToSet(params.get(ConfigConstants.INLINED_EVENT_PARAMS)));
         
         
         initBuffer();
@@ -127,16 +165,21 @@ public class S3StorageProcessor implements TrackingRequestProcessor{
             logger.trace("Written " + writtenBeforeGZ);
         }
 
-        if (writtenBeforeGZ > newFileTriggerSize) {
-            flushBuffer();
-            initBuffer();
+        if ((newFileTriggerSize > 0 && writtenBeforeGZ > newFileTriggerSize) ||
+        		(newFileTriggerInterval > 0 && System.currentTimeMillis() > startDate + newFileTriggerInterval * 1000L)) {
+        	flushBuffer(true);
         }
     }
 
     @Override
     public void shutdown() throws IOException {
-        flushBuffer();
+        flushBuffer(false);
     }
+
+	@Override
+	public void flush() throws IOException {
+		flushBuffer(true);
+	}
 
     private static final Logger logger = Logger.getLogger("wt1.storage.s3");
 

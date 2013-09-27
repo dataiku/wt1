@@ -175,6 +175,9 @@ public class CounterHandler implements TrackingRequestProcessor {
         } catch (InterruptedException e) {
         }
     }
+    
+    @Override
+    public void flush() throws IOException {}
 
     private static final Logger logger = Logger.getLogger("wt1.handler.count");
 }

@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * Base processor for tracked requests.
- * All methods of this processor are called in a single thread.
+ * Methods process and shutdown of this processor are called in a single thread.
  */
 public interface TrackingRequestProcessor {
     /**
@@ -34,4 +34,9 @@ public interface TrackingRequestProcessor {
      * pending events and IOs.
      */
     public void shutdown() throws IOException;
+    
+    /**
+     * Forces a flush of the storage queue.
+     */
+    public void flush() throws IOException;
 }

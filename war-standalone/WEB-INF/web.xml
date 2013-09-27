@@ -50,6 +50,15 @@
 	</servlet-mapping>
 	
 	<servlet>
+		<servlet-name>flush</servlet-name>
+		<servlet-class>com.dataiku.wt1.controllers.FlushServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>flush</servlet-name>
+		<url-pattern>/internal/flush</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
 		<servlet-name>handlers</servlet-name>
 		<servlet-class>com.dataiku.wt1.controllers.HandlersServlet</servlet-class>
 	</servlet>

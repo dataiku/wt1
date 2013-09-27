@@ -1,5 +1,6 @@
 package com.dataiku.wt1;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,7 @@ public class ProcessingQueue {
     public static class Stats {
         public long receivedEvents;
         public QueueHandlerStats storage;
-        public List<QueueHandlerStats> handlers = new ArrayList<ProcessingQueue.QueueHandlerStats>();
+        public List<QueueHandlerStats> handlers = new ArrayList<QueueHandlerStats>();
         /* Storage specific */
         public long savedEvents;
         public long createdFiles;
@@ -89,9 +90,10 @@ public class ProcessingQueue {
     // Configuration
     private Properties configuration;
     private int queueSize;
-    private int  sessionExpirationTimeS;
+    private int sessionExpirationTimeS;
 
-    private List<QueueHandler> handlers = new ArrayList<ProcessingQueue.QueueHandler>();
+    private QueueHandler storageHandler;
+    private List<QueueHandler> handlers = new ArrayList<QueueHandler>();
 
     public List<QueueHandler> getQueueHandlers() {
         return handlers;
@@ -110,7 +112,7 @@ public class ProcessingQueue {
     }
     
     public boolean isThirdPartyCookies() {
-        String tpc = ProcessingQueue.getInstance().getConfiguration().getProperty(ConfigConstants.SEND_THIRD_PARTY_COOKIE);
+        String tpc = getInstance().getConfiguration().getProperty(ConfigConstants.SEND_THIRD_PARTY_COOKIE);
         if (tpc != null && tpc.equalsIgnoreCase("true")) {
             return true;
         } else {
@@ -137,7 +139,7 @@ public class ProcessingQueue {
 
             TrackingRequestProcessor processor = (TrackingRequestProcessor) Class.forName(processorClass).newInstance();
             processor.init(processorParams);
-            QueueHandler storageHandler = new QueueHandler();
+            storageHandler = new QueueHandler();
             storageHandler.localStats = new QueueHandlerStats("storage");
             storageHandler.inQueue = new LinkedBlockingQueue<TrackedRequest>(queueSize);
             storageHandler.processor = processor;
@@ -220,6 +222,13 @@ public class ProcessingQueue {
                 }
             }
         }
+    }
+    
+    /**
+     * Flushes the storage handler.
+     */
+    public void flushStorage() throws IOException {
+    	storageHandler.processor.flush();
     }
 
     private static ProcessingQueue instance = new ProcessingQueue();
