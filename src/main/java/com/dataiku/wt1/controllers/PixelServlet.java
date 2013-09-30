@@ -104,7 +104,6 @@ public class PixelServlet extends HttpServlet {
         trackedReq.page = req.getHeader("Referer");
         trackedReq.ua = req.getHeader("User-Agent");
 
-        @SuppressWarnings("unchecked")
         Map<String, String[]> reqParams = req.getParameterMap();
         trackedReq.fillEventParams(reqParams);
 
