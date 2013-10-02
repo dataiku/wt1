@@ -1,3 +1,5 @@
+<?xml version="1.0"?>
+<!DOCTYPE backends>
 <backends>
  <backend name="tracker">
    <class>B4</class>

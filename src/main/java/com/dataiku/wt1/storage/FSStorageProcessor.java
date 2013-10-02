@@ -129,7 +129,7 @@ public class FSStorageProcessor implements TrackingRequestProcessor {
     @Override
     public void process(TrackedRequest req) throws IOException {
         if (logger.isTraceEnabled()) {
-            logger.trace("Processing request, curFile=" + writtenBeforeGZ);
+            logger.trace("Processing request, curFile=" + tmpFile.getAbsolutePath());
         }
 
         String line = csvWriter.makeLogLine(req);

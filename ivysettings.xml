@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<!DOCTYPE ivysettings>
+<ivysettings>
+    <settings defaultResolver="public"/>
+    <resolvers>
+        <ibiblio name="public" m2compatible="true"/>
+    </resolvers>
+</ivysettings>

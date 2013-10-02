@@ -11,7 +11,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.params.CoreConnectionPNames;
 
 public class SyncURLBencher {
@@ -21,7 +20,8 @@ public class SyncURLBencher {
 		URL u;
 		int nb;
 		public void run() {
-		    ClientConnectionManager cm = new SingleClientConnManager();
+		    @SuppressWarnings("deprecation")
+			ClientConnectionManager cm = new org.apache.http.impl.conn.SingleClientConnManager();
 		    DefaultHttpClient httpclient = new DefaultHttpClient(cm);
 		    httpclient.getParams()
 	          .setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 30000)

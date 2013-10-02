@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE appengine-web-app>
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
   <application>MY-GAE-APPLICATION-NAME</application>
   <version>1</version>
