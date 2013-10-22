@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+
 public class Utils {
     public static Map<String, String[]> decodeQueryString(String value) {
         Map<String, String[]> out = new HashMap<String, String[]>();
@@ -64,4 +66,17 @@ public class Utils {
         }
         return ret;
     }
+    /**
+     * Computes the remote host (ie, client) address for a servlet request. This first looks at common Proxy headers
+     * before using the request source address
+     * TODO - should parse XFF header and keep only the farthest public IP address
+     */
+    public static String computeRealRemoteAddress(HttpServletRequest req) {
+        String val = req.getHeader("X-Forwarded-For");
+        if (val != null) return val;
+        val = req.getHeader("X-Real-IP");
+        if (val != null) return val;
+        return req.getRemoteAddr();
+    }
+    
 }

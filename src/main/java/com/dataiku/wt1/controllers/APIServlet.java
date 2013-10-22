@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dataiku.wt1.ProcessingQueue;
 import com.dataiku.wt1.TrackedRequest;
+import com.dataiku.wt1.Utils;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -85,7 +86,7 @@ public class APIServlet extends HttpServlet {
         /* Message is OK, fill in our internal structure and enqueue */
         for (Event event : m.events) {
             TrackedRequest trackedReq = new TrackedRequest();
-            trackedReq.origAddress = req.getRemoteHost();
+            trackedReq.origAddress = Utils.computeRealRemoteAddress(req);
             trackedReq.visitorId = m.visitorId;
             trackedReq.sessionId = m.sessionId;
             trackedReq.visitorParams = m.vparams;

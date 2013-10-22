@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 import com.dataiku.wt1.ProcessingQueue;
 import com.dataiku.wt1.TrackedRequest;
 import com.dataiku.wt1.UUIDGenerator;
+import com.dataiku.wt1.Utils;
 
 @SuppressWarnings("serial")
 public class PixelServlet extends HttpServlet {
@@ -95,7 +96,7 @@ public class PixelServlet extends HttpServlet {
 
         /* Enqueue the request for processing */
         TrackedRequest trackedReq = new TrackedRequest();
-        trackedReq.origAddress = computeRealRemoteAddress(req);
+        trackedReq.origAddress = Utils.computeRealRemoteAddress(req);
         trackedReq.visitorId = visitorIdCookieVal;
         trackedReq.sessionId = sessionIdCookieVal;
         trackedReq.visitorParams = visitorParamsCookieVal;
@@ -110,19 +111,6 @@ public class PixelServlet extends HttpServlet {
         ProcessingQueue.getInstance().push(trackedReq);
     }
 
-    /**
-     * Computes the remote host (ie, client) address. This first looks at common Proxy headers
-     * before using the request source address
-     * TODO - should parse XFF header and keep only the farthest public IP address
-     */
-    public String computeRealRemoteAddress(HttpServletRequest req) {
-        String val = req.getHeader("X-Forwarded-For");
-        if (val != null) return val;
-        val = req.getHeader("X-Real-IP");
-        if (val != null) return val;
-        return req.getRemoteAddr();
-    }
-    
     /**
      * Sets or refreshes the third-party cookie, and returns its value.
      * Does nothing and returns null if third-party cookies are not enabled.
