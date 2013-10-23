@@ -2,6 +2,7 @@ package com.dataiku.wt1;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -10,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
+
+import com.google.common.net.InetAddresses;
 
 public class Utils {
     public static Map<String, String[]> decodeQueryString(String value) {
@@ -66,17 +69,42 @@ public class Utils {
         }
         return ret;
     }
+    
     /**
-     * Computes the remote host (ie, client) address for a servlet request. This first looks at common Proxy headers
-     * before using the request source address
-     * TODO - should parse XFF header and keep only the farthest public IP address
+     * Checks whether a String is a valid public IP address.
      */
-    public static String computeRealRemoteAddress(HttpServletRequest req) {
-        String val = req.getHeader("X-Forwarded-For");
-        if (val != null) return val;
-        val = req.getHeader("X-Real-IP");
-        if (val != null) return val;
-        return req.getRemoteAddr();
+    public static boolean isPublicAddress(String a) {
+    	if (! InetAddresses.isInetAddress(a)) {
+    		return false;
+    	}
+    	InetAddress addr = InetAddresses.forString(a);
+    	return ! addr.isSiteLocalAddress()
+    			&& ! addr.isLinkLocalAddress()
+    			&& ! addr.isLoopbackAddress()
+    			&& ! addr.isAnyLocalAddress()
+    			&& ! addr.isMulticastAddress();
     }
     
+    /**
+     * Computes the remote host (ie, client) address for a servlet request. This first looks at common Proxy headers
+     */
+    public static String computeRealRemoteAddress(HttpServletRequest req) {
+    	// First attempt to return the first (farthest) public IP address in the XFF chain
+        String val = req.getHeader("X-Forwarded-For");
+        if (val != null) {
+        	for (String chunk : val.split(",")) {
+        		String a = chunk.trim();
+        		if (isPublicAddress(a)) {
+        			return a;
+        		}
+        	}
+        }
+        // Else attempt to return the connection IP inserted by the reverse proxy
+        val = req.getHeader("X-Real-IP");
+        if (val != null && isPublicAddress(val)) {
+        	return val;
+        }
+        // Else return the physical address read from the socket.
+        return req.getRemoteAddr();
+    }
 }

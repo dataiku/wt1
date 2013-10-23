@@ -132,7 +132,7 @@ public class FSStorageProcessor implements TrackingRequestProcessor {
             logger.trace("Processing request, curFile=" + tmpFile.getAbsolutePath());
         }
 
-        String line = csvWriter.makeLogLine(req);
+        String line = csvWriter.makeLogLine(req, true);
         byte[] data = line.getBytes("utf8");
         writtenBeforeGZ += data.length;
         writtenEvents++;

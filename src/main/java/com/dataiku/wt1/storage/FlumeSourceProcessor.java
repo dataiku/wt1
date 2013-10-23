@@ -161,7 +161,7 @@ public class FlumeSourceProcessor implements TrackingRequestProcessor {
 
 	@Override
 	public void process(TrackedRequest req) throws IOException {
-        String line = csvWriter.makeLogLine(req);
+        String line = csvWriter.makeLogLine(req, false);
         byte[] data = line.getBytes("utf8");
 
         if (events.size() >= maxBufferSize) {

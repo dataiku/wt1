@@ -154,7 +154,7 @@ public class S3StorageProcessor implements TrackingRequestProcessor{
             logger.trace("Processing request, curWritten=" + writtenBeforeGZ);
         }
 
-        String line = csvWriter.makeLogLine(req);
+        String line = csvWriter.makeLogLine(req, true);
         byte[] data = line.getBytes("utf8");
         writtenBeforeGZ += data.length;
         writtenEvents++;

@@ -63,9 +63,9 @@ public class CSVFormatWriter {
 
 
     /**
-     * Write the line of log for one request
+     * Write the line of log for one request, with optional terminating newline
      */
-    public String makeLogLine(TrackedRequest req) {
+    public String makeLogLine(TrackedRequest req, boolean newline) {
         StringBuilder sb = new StringBuilder();
         sb.append(isoFormatter.print(req.serverTS));
         sb.append('\t');
@@ -117,7 +117,9 @@ public class CSVFormatWriter {
             doInline(Utils.decodeQueryString(req.eventParams), inlinedEP, sb);
         }
 
-        sb.append("\n");
+        if (newline) {
+        	sb.append("\n");
+        }
 
         return sb.toString();
     }
