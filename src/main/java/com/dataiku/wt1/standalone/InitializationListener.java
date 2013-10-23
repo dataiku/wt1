@@ -38,6 +38,7 @@ public class InitializationListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent event) {
+        logger.info("Application starting");
         try {
             /* Load config */
             File configFile = new File(event.getServletContext().getRealPath(CONFIG_PATH));
@@ -51,8 +52,9 @@ public class InitializationListener implements ServletContextListener {
                 threads.add(thread);
                 thread.start();
             }
-        } catch (Exception e) {
-            throw new Error("Could not create processing queue", e);
+        } catch (Throwable t) {
+        	logger.error("Could not create processing queue", t);
+            throw new Error("Could not create processing queue", t);
         }
         logger.info("Application started");
     }
