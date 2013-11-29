@@ -91,6 +91,7 @@ public class ProcessingQueue {
     private Properties configuration;
     private int queueSize;
     private int sessionExpirationTimeS;
+    private boolean thirdPartyCookies;
 
     private QueueHandler storageHandler;
     private List<QueueHandler> handlers = new ArrayList<QueueHandler>();
@@ -112,19 +113,16 @@ public class ProcessingQueue {
     }
     
     public boolean isThirdPartyCookies() {
-        String tpc = getInstance().getConfiguration().getProperty(ConfigConstants.SEND_THIRD_PARTY_COOKIE);
-        if (tpc != null && tpc.equalsIgnoreCase("true")) {
-            return true;
-        } else {
-            return false;
-        }
+    	return thirdPartyCookies;
     }
     
     public void configure(Properties props) throws Exception {
         this.configuration = props;
         /* Global config */
         queueSize = Integer.parseInt(props.getProperty(ConfigConstants.MAX_QUEUE_SIZE_PARAM, ConfigConstants.DEFAULT_MAX_QUEUE_SIZE));
-        sessionExpirationTimeS =  Integer.parseInt(props.getProperty(ConfigConstants.SESSION_EXPIRATION_PARAM, ConfigConstants.DEFAULT_SESSION_EXPIRATION));
+        sessionExpirationTimeS = Integer.parseInt(props.getProperty(ConfigConstants.SESSION_EXPIRATION_PARAM, ConfigConstants.DEFAULT_SESSION_EXPIRATION));
+        String tpc = props.getProperty(ConfigConstants.SEND_THIRD_PARTY_COOKIE);
+        thirdPartyCookies = (tpc != null && tpc.equalsIgnoreCase("true"));
 
         /* Load main storage processor from config */
         {

@@ -64,7 +64,7 @@ public class CounterHandler implements TrackingRequestProcessor {
             while (!shutdown) {
                 logger.debug("Running eviction");
                 synchronized(CounterHandler.this) {
-                    long minTime = System.currentTimeMillis() - 1000*ProcessingQueue.getInstance().getSessionExpirationTimeS();
+                    long minTime = System.currentTimeMillis() - 1000 * ProcessingQueue.getInstance().getSessionExpirationTimeS();
                     List<String> toMove = new ArrayList<String>();
                     for (Map.Entry<String, Long> activeVisit : activeVisits.entrySet()) {
                         if (activeVisit.getValue() < minTime) {

@@ -23,7 +23,6 @@ public class InitializationListener implements ServletContextListener {
 
     Logger logger = Logger.getLogger("wt1");
 
-
     @Override
     public void contextDestroyed(ServletContextEvent arg0) {
         logger.info("Application stopping");

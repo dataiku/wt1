@@ -24,7 +24,7 @@ public class GlobalIdServlet extends HttpServlet {
 			return;
 		}
 
-        String globalVisitorIdVal = PixelServlet.getThirdPartyCookie(req, resp);
+        String globalVisitorIdVal = PixelServlet.getThirdPartyCookie(req, resp, true, null);
         if (globalVisitorIdVal == null) {
         	globalVisitorIdVal = "";
         }

@@ -5,6 +5,7 @@ public class ConfigConstants {
     public static final String MAX_QUEUE_SIZE_PARAM = "maxQueueSize";
     
     public static final String SEND_THIRD_PARTY_COOKIE = "thirdPartyCookies";
+    public static final String OPTOUT_CALLBACK_URL = "optoutCallbackUrl";
 
     public static final String DEFAULT_SESSION_EXPIRATION = "1800"; // 30 minutes
     public static final String SESSION_EXPIRATION_PARAM = "sessionExpiration";

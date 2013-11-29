@@ -43,9 +43,11 @@ public class PixelServlet extends HttpServlet {
     public static final String SESSION_PARAMS_COOKIE = "__wt1spc";
 
     public static final String VISITOR_ID_THIRD_PARTY_COOKIE = "__wt1tpvic";
+    public static final String VISITOR_ID_OPTOUT_COOKIE = "__wt1optout";
 
-    private static boolean thirdPartyCookie;
-
+    public static final int VISITOR_ID_THIRD_PARTY_COOKIE_LIFETIME = 2 * 365 * 86400;
+    public static final int VISITOR_ID_OPTOUT_COOKIE_LIFETIME = 5 * 365 * 86400;
+    
     @Override
     public void init(ServletConfig config) throws ServletException {
         ServletContext ctx = config.getServletContext();
@@ -57,8 +59,6 @@ public class PixelServlet extends HttpServlet {
             logger.error("Failed to read pixel", e);
             throw new ServletException(e);
         }
-
-        thirdPartyCookie = ProcessingQueue.getInstance().isThirdPartyCookies();
     }
 
     @Override
@@ -70,7 +70,11 @@ public class PixelServlet extends HttpServlet {
         String visitorParamsCookieVal = req.getParameter(VISITOR_PARAMS_COOKIE);
         String sessionParamsCookieVal = req.getParameter(SESSION_PARAMS_COOKIE);
 
-        String globalVisitorIdVal = getThirdPartyCookie(req, resp);
+        /* If there is no global id and there is a visitor id with enough entropy, seed the global id from the visitor id
+         * in order to avoid generating duplicates on race conditions generated from simultaneous asynchronous requests.
+         */
+        String seed = (visitorIdCookieVal != null && visitorIdCookieVal.length() >= 8) ? visitorIdCookieVal : null;
+        String globalVisitorIdVal = getThirdPartyCookie(req, resp, true, seed);
 
         /* If we don't have visitor id or session id, generate some (prefixed with an identifier for 
          * their fakeness)
@@ -113,31 +117,97 @@ public class PixelServlet extends HttpServlet {
 
     /**
      * Sets or refreshes the third-party cookie, and returns its value.
-     * Does nothing and returns null if third-party cookies are not enabled.
+     * @param generate Generate a global id if none
+     * @param seed Seed to be used to generate the global id, or null if none
+     * @return The global session id, or null if none, or the empty string if the user has opted out third-party tracking.  
      */
-    public static String getThirdPartyCookie(HttpServletRequest req, HttpServletResponse resp) {
-    	if (! thirdPartyCookie) {
+    public static String getThirdPartyCookie(HttpServletRequest req, HttpServletResponse resp,
+    		boolean generate, String seed) {
+    	if (! ProcessingQueue.getInstance().isThirdPartyCookies()) {
     		return null;
     	}
     	String globalVisitorId = null;
+    	String optoutCookieVal = null;
     	if (req.getCookies() != null) {
     		for (Cookie cookie : req.getCookies()) {
     			if (cookie.getName().equals(VISITOR_ID_THIRD_PARTY_COOKIE)) {
     				globalVisitorId = cookie.getValue();
-    				break;
+    			} else if (cookie.getName().equals(VISITOR_ID_OPTOUT_COOKIE)) {
+    				optoutCookieVal = cookie.getValue();
     			}
     		}
-    	}  
-    	if (globalVisitorId == null) {
-    		globalVisitorId = UUIDGenerator.generate();
     	}
-    	/* Refresh the cookie */
-    	Cookie visitorIdTPCookie = new Cookie(VISITOR_ID_THIRD_PARTY_COOKIE, globalVisitorId);
-    	visitorIdTPCookie.setMaxAge(2 * 365 * 86400);
-    	visitorIdTPCookie.setPath("/");
-    	resp.addCookie(visitorIdTPCookie);
-    	return globalVisitorId;
+    	if (optoutCookieVal != null && ! optoutCookieVal.equals("0")) {
+    		/* Refresh the opt-out cookie. */
+    		Cookie optoutCookie = new Cookie(VISITOR_ID_OPTOUT_COOKIE, "1");
+    		optoutCookie.setMaxAge(VISITOR_ID_OPTOUT_COOKIE_LIFETIME);
+    		optoutCookie.setPath("/");
+    		resp.addCookie(optoutCookie);
+    		return "";
+    		
+    	} else {
+    		if (globalVisitorId == null || globalVisitorId.equals("0")) {
+    			if (generate) {
+    				globalVisitorId = (seed == null) ? UUIDGenerator.generate() : UUIDGenerator.fromSeed(seed);
+    			} else {
+    				globalVisitorId = null;
+    			}
+    		}
+    		if (globalVisitorId != null) {
+    			/* Refresh the cookie */
+    			Cookie visitorIdTPCookie = new Cookie(VISITOR_ID_THIRD_PARTY_COOKIE, globalVisitorId);
+    			visitorIdTPCookie.setMaxAge(VISITOR_ID_THIRD_PARTY_COOKIE_LIFETIME);
+    			visitorIdTPCookie.setPath("/");
+    			resp.addCookie(visitorIdTPCookie);
+    		}
+    		return globalVisitorId;
+    	}
     }
+    
+    /**
+     * Sets / resets the third-party opt-out cookie.
+     */
+    public static void setOptout(HttpServletRequest req, HttpServletResponse resp, boolean optout) {
+    	if (! ProcessingQueue.getInstance().isThirdPartyCookies()) {
+    		return;
+    	}
+    	/* Look for existing cookies. */
+    	String globalVisitorId = null;
+    	String optoutCookieVal = null; 
+    	if (req.getCookies() != null) {
+    		for (Cookie cookie : req.getCookies()) {
+    			if (cookie.getName().equals(VISITOR_ID_THIRD_PARTY_COOKIE)) {
+    				globalVisitorId = cookie.getValue();
+    			} else if (cookie.getName().equals(VISITOR_ID_OPTOUT_COOKIE)) {
+    				optoutCookieVal = cookie.getValue();
+    			}
+    		}
+    	}
 
+    	if (optout) {
+    		/* Expire the global id cookie if any. */
+    		if (globalVisitorId != null) {
+    			Cookie visitorIdTPCookie = new Cookie(VISITOR_ID_THIRD_PARTY_COOKIE, "0");
+    			visitorIdTPCookie.setMaxAge(0);
+    			visitorIdTPCookie.setPath("/");
+    			resp.addCookie(visitorIdTPCookie);
+    		}
+    		/* Set / refresh the opt-out cookie. */
+    		Cookie optoutCookie = new Cookie(VISITOR_ID_OPTOUT_COOKIE, "1");
+    		optoutCookie.setMaxAge(VISITOR_ID_OPTOUT_COOKIE_LIFETIME);
+    		optoutCookie.setPath("/");
+    		resp.addCookie(optoutCookie);
+
+    	} else {
+    		/* Expire the opt-out cookie if any. */
+    		if (optoutCookieVal != null) {
+    			Cookie optoutCookie = new Cookie(VISITOR_ID_OPTOUT_COOKIE, "0");
+    			optoutCookie.setMaxAge(0);
+    			optoutCookie.setPath("/");
+    			resp.addCookie(optoutCookie);
+    		}
+    	}
+    }
+    
     private static Logger logger = Logger.getLogger("wt1.tracker");
 }
