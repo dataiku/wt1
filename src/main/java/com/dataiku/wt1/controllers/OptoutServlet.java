@@ -1,9 +1,6 @@
 package com.dataiku.wt1.controllers;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -24,21 +21,9 @@ public class OptoutServlet extends HttpServlet {
 	
     @Override
     public void init(ServletConfig config) throws ServletException {
-    	String callback = ProcessingQueue.getInstance().getConfiguration().getProperty(ConfigConstants.OPTOUT_CALLBACK_URL);
-    	if (callback == null) {
+    	optoutCallbackUrl = ProcessingQueue.getInstance().getConfiguration().getProperty(ConfigConstants.OPTOUT_CALLBACK_URL);
+    	if (optoutCallbackUrl == null) {
     		logger.warn("No opt-out callback URL, callback disabled");
-    		return;
-    	}
-    	try {
-    		URL url = new URL(callback);
-    		if (url.getQuery() != null) {
-    			logger.error("Invalid opt-out callback URL, should not contain query part, callback disabled : " + callback);
-    			return;
-    		}
-    		optoutCallbackUrl = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile()).toString();
-        	logger.info("Using callback URL : " + optoutCallbackUrl);
-    	} catch (MalformedURLException e) {
-        	logger.error("Invalid opt-out callback URL, callback disabled : " + callback);
     	}
     }
 

@@ -51,7 +51,6 @@ public class PixelServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         ServletContext ctx = config.getServletContext();
-
         try {
             File f = new File(ctx.getRealPath(PIXEL_PATH));
             pixelData = FileUtils.readFileToByteArray(f);
@@ -126,6 +125,11 @@ public class PixelServlet extends HttpServlet {
     	if (! ProcessingQueue.getInstance().isThirdPartyCookies()) {
     		return null;
     	}
+    	String p3pHeader = ProcessingQueue.getInstance().getP3PHeader();
+    	if (p3pHeader != null) {
+    		resp.setHeader("P3P", p3pHeader);
+    	}
+    	
     	String globalVisitorId = null;
     	String optoutCookieVal = null;
     	if (req.getCookies() != null) {
@@ -171,6 +175,11 @@ public class PixelServlet extends HttpServlet {
     	if (! ProcessingQueue.getInstance().isThirdPartyCookies()) {
     		return;
     	}
+    	String p3pHeader = ProcessingQueue.getInstance().getP3PHeader();
+    	if (p3pHeader != null) {
+    		resp.setHeader("P3P", p3pHeader);
+    	}
+
     	/* Look for existing cookies. */
     	String globalVisitorId = null;
     	String optoutCookieVal = null; 

@@ -92,6 +92,7 @@ public class ProcessingQueue {
     private int queueSize;
     private int sessionExpirationTimeS;
     private boolean thirdPartyCookies;
+	private String p3pHeader;
 
     private QueueHandler storageHandler;
     private List<QueueHandler> handlers = new ArrayList<QueueHandler>();
@@ -116,6 +117,10 @@ public class ProcessingQueue {
     	return thirdPartyCookies;
     }
     
+    public String getP3PHeader() {
+    	return p3pHeader;
+    }
+    
     public void configure(Properties props) throws Exception {
         this.configuration = props;
         /* Global config */
@@ -123,6 +128,7 @@ public class ProcessingQueue {
         sessionExpirationTimeS = Integer.parseInt(props.getProperty(ConfigConstants.SESSION_EXPIRATION_PARAM, ConfigConstants.DEFAULT_SESSION_EXPIRATION));
         String tpc = props.getProperty(ConfigConstants.SEND_THIRD_PARTY_COOKIE);
         thirdPartyCookies = (tpc != null && tpc.equalsIgnoreCase("true"));
+    	p3pHeader = props.getProperty(ConfigConstants.P3P_HEADER);
 
         /* Load main storage processor from config */
         {
