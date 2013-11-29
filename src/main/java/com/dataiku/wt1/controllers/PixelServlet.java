@@ -44,6 +44,8 @@ public class PixelServlet extends HttpServlet {
 
     public static final String VISITOR_ID_THIRD_PARTY_COOKIE = "__wt1tpvic";
     public static final String VISITOR_ID_OPTOUT_COOKIE = "__wt1optout";
+    
+    public static final String DO_NOT_TRACK_HEADER = "DNT";
 
     public static final int VISITOR_ID_THIRD_PARTY_COOKIE_LIFETIME = 2 * 365 * 86400;
     public static final int VISITOR_ID_OPTOUT_COOKIE_LIFETIME = 5 * 365 * 86400;
@@ -113,23 +115,30 @@ public class PixelServlet extends HttpServlet {
 
         ProcessingQueue.getInstance().push(trackedReq);
     }
+    
+    /**
+     * Sets a tracking cookie, or remove it if lifetime is zero.
+     */
+    private static void setCookie(HttpServletResponse resp, String name, String value, int lifetime) {
+		Cookie cookie = new Cookie(name, value);
+		cookie.setMaxAge(lifetime);
+		cookie.setPath("/");
+		resp.addCookie(cookie);
+    }
 
     /**
      * Sets or refreshes the third-party cookie, and returns its value.
      * @param generate Generate a global id if none
      * @param seed Seed to be used to generate the global id, or null if none
-     * @return The global session id, or null if none, or the empty string if the user has opted out third-party tracking.  
+     * @return The global visitor id, or null if none, or the empty string if the user has opted out third-party tracking.  
      */
     public static String getThirdPartyCookie(HttpServletRequest req, HttpServletResponse resp,
     		boolean generate, String seed) {
     	if (! ProcessingQueue.getInstance().isThirdPartyCookies()) {
     		return null;
     	}
-    	String p3pHeader = ProcessingQueue.getInstance().getP3PHeader();
-    	if (p3pHeader != null) {
-    		resp.setHeader("P3P", p3pHeader);
-    	}
-    	
+
+    	// Look for existing cookies
     	String globalVisitorId = null;
     	String optoutCookieVal = null;
     	if (req.getCookies() != null) {
@@ -141,31 +150,47 @@ public class PixelServlet extends HttpServlet {
     			}
     		}
     	}
-    	if (optoutCookieVal != null && ! optoutCookieVal.equals("0")) {
-    		/* Refresh the opt-out cookie. */
-    		Cookie optoutCookie = new Cookie(VISITOR_ID_OPTOUT_COOKIE, "1");
-    		optoutCookie.setMaxAge(VISITOR_ID_OPTOUT_COOKIE_LIFETIME);
-    		optoutCookie.setPath("/");
-    		resp.addCookie(optoutCookie);
-    		return "";
-    		
-    	} else {
-    		if (globalVisitorId == null || globalVisitorId.equals("0")) {
-    			if (generate) {
-    				globalVisitorId = (seed == null) ? UUIDGenerator.generate() : UUIDGenerator.fromSeed(seed);
-    			} else {
-    				globalVisitorId = null;
-    			}
-    		}
-    		if (globalVisitorId != null) {
-    			/* Refresh the cookie */
-    			Cookie visitorIdTPCookie = new Cookie(VISITOR_ID_THIRD_PARTY_COOKIE, globalVisitorId);
-    			visitorIdTPCookie.setMaxAge(VISITOR_ID_THIRD_PARTY_COOKIE_LIFETIME);
-    			visitorIdTPCookie.setPath("/");
-    			resp.addCookie(visitorIdTPCookie);
-    		}
-    		return globalVisitorId;
+    	
+    	// Send P3P header if configured
+    	String p3pHeader = ProcessingQueue.getInstance().getP3PHeader();
+    	if (p3pHeader != null) {
+    		resp.setHeader("P3P", p3pHeader);
     	}
+    	
+    	// Parse and echo DNT header if present
+    	String doNotTrackVal = req.getHeader(DO_NOT_TRACK_HEADER);
+    	if (doNotTrackVal != null) {
+    		resp.addHeader(DO_NOT_TRACK_HEADER, doNotTrackVal);
+    		if (doNotTrackVal.equals("1")) {
+    			// Remove any third-party cookie
+    			if (globalVisitorId != null) {
+    				setCookie(resp, VISITOR_ID_THIRD_PARTY_COOKIE, "0", 0);
+    			}
+    			if (optoutCookieVal != null) {
+    				setCookie(resp, VISITOR_ID_OPTOUT_COOKIE, "0", 0);
+    			}
+    			return "";
+    		}
+    	}
+    	
+    	if (optoutCookieVal != null && optoutCookieVal.equals("1")) {
+    		/* Refresh the opt-out cookie. */
+    		setCookie(resp, VISITOR_ID_OPTOUT_COOKIE, "1", VISITOR_ID_OPTOUT_COOKIE_LIFETIME);
+    		return "";
+    	}
+
+    	if (globalVisitorId == null || globalVisitorId.equals("0")) {
+    		if (generate) {
+    			globalVisitorId = (seed == null) ? UUIDGenerator.generate() : UUIDGenerator.fromSeed(seed);
+    		} else {
+    			globalVisitorId = null;
+    		}
+    	}
+    	if (globalVisitorId != null) {
+    		/* Refresh the global visitor id cookie */
+    		setCookie(resp, VISITOR_ID_THIRD_PARTY_COOKIE, globalVisitorId, VISITOR_ID_THIRD_PARTY_COOKIE_LIFETIME);
+    	}
+    	return globalVisitorId;
     }
     
     /**
@@ -174,10 +199,6 @@ public class PixelServlet extends HttpServlet {
     public static void setOptout(HttpServletRequest req, HttpServletResponse resp, boolean optout) {
     	if (! ProcessingQueue.getInstance().isThirdPartyCookies()) {
     		return;
-    	}
-    	String p3pHeader = ProcessingQueue.getInstance().getP3PHeader();
-    	if (p3pHeader != null) {
-    		resp.setHeader("P3P", p3pHeader);
     	}
 
     	/* Look for existing cookies. */
@@ -193,27 +214,40 @@ public class PixelServlet extends HttpServlet {
     		}
     	}
 
+    	// Send P3P header if configured
+    	String p3pHeader = ProcessingQueue.getInstance().getP3PHeader();
+    	if (p3pHeader != null) {
+    		resp.setHeader("P3P", p3pHeader);
+    	}
+
+    	// Parse and echo DNT header if present
+    	String doNotTrackVal = req.getHeader(DO_NOT_TRACK_HEADER);
+    	if (doNotTrackVal != null) {
+    		resp.addHeader(DO_NOT_TRACK_HEADER, doNotTrackVal);
+    		if (doNotTrackVal.equals("1")) {
+    			// Remove any third-party cookie
+    			if (globalVisitorId != null) {
+    				setCookie(resp, VISITOR_ID_THIRD_PARTY_COOKIE, "0", 0);
+    			}
+    			if (optoutCookieVal != null) {
+    				setCookie(resp, VISITOR_ID_OPTOUT_COOKIE, "0", 0);
+    			}
+    			return;
+    		}
+    	}
+    	
     	if (optout) {
     		/* Expire the global id cookie if any. */
     		if (globalVisitorId != null) {
-    			Cookie visitorIdTPCookie = new Cookie(VISITOR_ID_THIRD_PARTY_COOKIE, "0");
-    			visitorIdTPCookie.setMaxAge(0);
-    			visitorIdTPCookie.setPath("/");
-    			resp.addCookie(visitorIdTPCookie);
+    			setCookie(resp, VISITOR_ID_THIRD_PARTY_COOKIE, "0", 0);
     		}
     		/* Set / refresh the opt-out cookie. */
-    		Cookie optoutCookie = new Cookie(VISITOR_ID_OPTOUT_COOKIE, "1");
-    		optoutCookie.setMaxAge(VISITOR_ID_OPTOUT_COOKIE_LIFETIME);
-    		optoutCookie.setPath("/");
-    		resp.addCookie(optoutCookie);
+    		setCookie(resp, VISITOR_ID_OPTOUT_COOKIE, "1", VISITOR_ID_OPTOUT_COOKIE_LIFETIME);
 
     	} else {
     		/* Expire the opt-out cookie if any. */
     		if (optoutCookieVal != null) {
-    			Cookie optoutCookie = new Cookie(VISITOR_ID_OPTOUT_COOKIE, "0");
-    			optoutCookie.setMaxAge(0);
-    			optoutCookie.setPath("/");
-    			resp.addCookie(optoutCookie);
+    			setCookie(resp, VISITOR_ID_OPTOUT_COOKIE, "0", 0);
     		}
     	}
     }
