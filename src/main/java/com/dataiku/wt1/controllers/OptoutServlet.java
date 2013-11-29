@@ -32,7 +32,8 @@ public class OptoutServlet extends HttpServlet {
     	try {
     		URL url = new URL(callback);
     		if (url.getQuery() != null) {
-    			logger.warn("Ignoring query part in callback URL");
+    			logger.error("Invalid opt-out callback URL, should not contain query part, callback disabled : " + callback);
+    			return;
     		}
     		optoutCallbackUrl = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile()).toString();
         	logger.info("Using callback URL : " + optoutCallbackUrl);
@@ -68,7 +69,7 @@ public class OptoutServlet extends HttpServlet {
 					resp.sendRedirect(optoutCallbackUrl + "?status=nocookie");
 				} else {
 					resp.setContentType("text/plain");
-					resp.getWriter().write("nocookie");
+					resp.getWriter().write("nocookie\r\n");
 				}
 			} else if (globalVisitorId.equals("")) {
 				if (optoutCallbackUrl != null) {
@@ -76,14 +77,14 @@ public class OptoutServlet extends HttpServlet {
 					resp.sendRedirect(optoutCallbackUrl + "?status=optedout");
 				} else {
 					resp.setContentType("text/plain");
-					resp.getWriter().write("optedout");
+					resp.getWriter().write("optedout\r\n");
 				}
 			} else {
 				if (optoutCallbackUrl != null) {
 					resp.sendRedirect(optoutCallbackUrl + "?status=cookie");
 				} else {
 					resp.setContentType("text/plain");
-					resp.getWriter().write("cookie");
+					resp.getWriter().write("cookie\r\n");
 				}
 			}
 

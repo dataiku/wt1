@@ -40,7 +40,7 @@
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>optout</servlet-name>
-		<url-pattern>/public/cookie</url-pattern>
+		<url-pattern>/public/cookie/*</url-pattern>
 	</servlet-mapping>
 	
 	<!--  Health-checking servlet -->
