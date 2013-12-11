@@ -158,18 +158,20 @@ public class PixelServlet extends HttpServlet {
     	}
     	
     	// Parse and echo DNT header if present
-    	String doNotTrackVal = req.getHeader(DO_NOT_TRACK_HEADER);
-    	if (doNotTrackVal != null) {
-    		resp.addHeader(DO_NOT_TRACK_HEADER, doNotTrackVal);
-    		if (doNotTrackVal.equals("1")) {
-    			// Remove any third-party cookie
-    			if (globalVisitorId != null) {
-    				setCookie(resp, VISITOR_ID_THIRD_PARTY_COOKIE, "0", 0);
+    	if (! ProcessingQueue.getInstance().isIgnoreDNT()) {
+    		String doNotTrackVal = req.getHeader(DO_NOT_TRACK_HEADER);
+    		if (doNotTrackVal != null) {
+    			resp.addHeader(DO_NOT_TRACK_HEADER, doNotTrackVal);
+    			if (doNotTrackVal.equals("1")) {
+    				// Remove any third-party cookie
+    				if (globalVisitorId != null) {
+    					setCookie(resp, VISITOR_ID_THIRD_PARTY_COOKIE, "0", 0);
+    				}
+    				if (optoutCookieVal != null) {
+    					setCookie(resp, VISITOR_ID_OPTOUT_COOKIE, "0", 0);
+    				}
+    				return "";
     			}
-    			if (optoutCookieVal != null) {
-    				setCookie(resp, VISITOR_ID_OPTOUT_COOKIE, "0", 0);
-    			}
-    			return "";
     		}
     	}
     	
@@ -221,18 +223,20 @@ public class PixelServlet extends HttpServlet {
     	}
 
     	// Parse and echo DNT header if present
-    	String doNotTrackVal = req.getHeader(DO_NOT_TRACK_HEADER);
-    	if (doNotTrackVal != null) {
-    		resp.addHeader(DO_NOT_TRACK_HEADER, doNotTrackVal);
-    		if (doNotTrackVal.equals("1")) {
-    			// Remove any third-party cookie
-    			if (globalVisitorId != null) {
-    				setCookie(resp, VISITOR_ID_THIRD_PARTY_COOKIE, "0", 0);
+    	if (! ProcessingQueue.getInstance().isIgnoreDNT()) {
+    		String doNotTrackVal = req.getHeader(DO_NOT_TRACK_HEADER);
+    		if (doNotTrackVal != null) {
+    			resp.addHeader(DO_NOT_TRACK_HEADER, doNotTrackVal);
+    			if (doNotTrackVal.equals("1")) {
+    				// Remove any third-party cookie
+    				if (globalVisitorId != null) {
+    					setCookie(resp, VISITOR_ID_THIRD_PARTY_COOKIE, "0", 0);
+    				}
+    				if (optoutCookieVal != null) {
+    					setCookie(resp, VISITOR_ID_OPTOUT_COOKIE, "0", 0);
+    				}
+    				return;
     			}
-    			if (optoutCookieVal != null) {
-    				setCookie(resp, VISITOR_ID_OPTOUT_COOKIE, "0", 0);
-    			}
-    			return;
     		}
     	}
     	

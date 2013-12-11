@@ -93,6 +93,7 @@ public class ProcessingQueue {
     private int sessionExpirationTimeS;
     private boolean thirdPartyCookies;
 	private String p3pHeader;
+	private boolean ignoreDNT;
 
     private QueueHandler storageHandler;
     private List<QueueHandler> handlers = new ArrayList<QueueHandler>();
@@ -121,14 +122,32 @@ public class ProcessingQueue {
     	return p3pHeader;
     }
     
+    public boolean isIgnoreDNT() {
+    	return ignoreDNT;
+    }
+    
     public void configure(Properties props) throws Exception {
         this.configuration = props;
         /* Global config */
         queueSize = Integer.parseInt(props.getProperty(ConfigConstants.MAX_QUEUE_SIZE_PARAM, ConfigConstants.DEFAULT_MAX_QUEUE_SIZE));
         sessionExpirationTimeS = Integer.parseInt(props.getProperty(ConfigConstants.SESSION_EXPIRATION_PARAM, ConfigConstants.DEFAULT_SESSION_EXPIRATION));
         String tpc = props.getProperty(ConfigConstants.SEND_THIRD_PARTY_COOKIE);
-        thirdPartyCookies = (tpc != null && tpc.equalsIgnoreCase("true"));
+        if (tpc != null) {
+        	if (tpc.equalsIgnoreCase("true")) {
+        		thirdPartyCookies = true;
+        	} else if (! tpc.equalsIgnoreCase("false")) {
+        		logger.warn("Ignoring invalid value for " + ConfigConstants.SEND_THIRD_PARTY_COOKIE + " : " + tpc);
+        	}
+        }
     	p3pHeader = props.getProperty(ConfigConstants.P3P_HEADER);
+    	String iDNT = props.getProperty(ConfigConstants.IGNORE_DNT);
+        if (iDNT != null) {
+        	if (iDNT.equalsIgnoreCase("true")) {
+        		ignoreDNT = true;
+        	} else if (! iDNT.equalsIgnoreCase("false")) {
+        		logger.warn("Ignoring invalid value for " + ConfigConstants.IGNORE_DNT + " : " + iDNT);
+        	}
+        }
 
         /* Load main storage processor from config */
         {
