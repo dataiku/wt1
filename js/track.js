@@ -125,7 +125,7 @@ W1TTracker.prototype.setCookie = function(name, value, lifeMinutes){
     var expr = new Date(new Date().getTime() + lifeMinutes * 60 * 1000);
     ckie += "expires=" + expr.toGMTString() + "; ";
     ckie += "path=/; ";
-    ckie += "domain=" + document.location.host + "; ";
+//    ckie += "domain=" + document.location.host + "; ";
     document.cookie = ckie;
 };
 
