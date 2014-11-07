@@ -154,13 +154,7 @@
 - (NSData*)makeRequest:(NSArray*)evts {
     NSMutableDictionary* dict = [[NSMutableDictionary alloc] init];
     
-    NSString* vid;
-    if ([[UIDevice currentDevice] respondsToSelector:@selector(identifierForVendor)])  {
-        vid = [[[UIDevice currentDevice] identifierForVendor] UUIDString];
-    } else {
-        NSLog(@"Using IOS5");
-        vid = [[UIDevice currentDevice] uniqueIdentifier];
-    }
+    NSString* vid = [[[UIDevice currentDevice] identifierForVendor] UUIDString];
     [dict setObject:vid forKey:@"visitorId"];
     
     if (self.sessionParams != nil) {
