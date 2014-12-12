@@ -257,9 +257,16 @@ W1TTracker.prototype.track = function(type, params) {
     }
 
     /* Encode the final query string */
-    var url = this.encodeQS(params);
-    var img = new Image(1, 1);
-    img.src = this.trackURL + "?" + url;
+    var qs = this.encodeQS(params);
+    if (qs.length > 1800) {
+        var request = new XMLHttpRequest();
+        request.open('POST', this.trackURL, true);
+        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+        request.send(qs);
+    } else {
+        var img = new Image(1, 1);
+        img.src = this.trackURL + "?" + qs;
+    }
 };
 
 /* Script is ready to load: retrieve the already pushed

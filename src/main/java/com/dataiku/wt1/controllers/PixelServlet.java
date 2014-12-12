@@ -63,7 +63,7 @@ public class PixelServlet extends HttpServlet {
     }
 
     @Override
-    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    public void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
     	/* Get all current cookie values (visitor id, visitor params, session params) */
         String visitorIdCookieVal = req.getParameter(VISITOR_ID_COOKIE);
