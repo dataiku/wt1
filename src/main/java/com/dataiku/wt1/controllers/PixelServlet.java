@@ -94,6 +94,8 @@ public class PixelServlet extends HttpServlet {
         // no-cache=Set-Cookie : you can store the content in cache, but not this header
         // proxy-revalidate: Make sure some possibly-broken proxies don't interfere
         resp.addHeader("Cache-Control", "private, no-cache, no-cache=Set-Cookie, proxy-revalidate");
+        
+        resp.addHeader("Access-Control-Allow-Origin", "*");
 
         /* Send the GIF to the client */
         resp.setContentType("image/gif");
