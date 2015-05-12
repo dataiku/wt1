@@ -17,19 +17,18 @@ public class GlobalIdServlet extends HttpServlet {
 	 */
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-
+	    String globalVisitorIdVal = PixelServlet.getThirdPartyCookie(req, resp, true, null);
+        if (globalVisitorIdVal == null) {
+            globalVisitorIdVal = "";
+        }
+	    
 		String fun = req.getParameter(FUN_PARAM);
 		if (fun == null) {
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "missing parameter: " + FUN_PARAM);
-			return;
+			resp.setContentType("application/json");
+            resp.getWriter().write("{\"id\": \""+ globalVisitorIdVal + "\" }");
+		} else {
+		    resp.setContentType("application/x-javascript");
+	        resp.getWriter().write(fun + "(\"" + globalVisitorIdVal + "\");");
 		}
-
-        String globalVisitorIdVal = PixelServlet.getThirdPartyCookie(req, resp, true, null);
-        if (globalVisitorIdVal == null) {
-        	globalVisitorIdVal = "";
-        }
-
-		resp.setContentType("application/x-javascript");
-		resp.getWriter().write(fun + "(\"" + globalVisitorIdVal + "\");");
 	}
 }
