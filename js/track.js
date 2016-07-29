@@ -125,7 +125,9 @@ W1TTracker.prototype.setCookie = function(name, value, lifeMinutes){
     var expr = new Date(new Date().getTime() + lifeMinutes * 60 * 1000);
     ckie += "expires=" + expr.toGMTString() + "; ";
     ckie += "path=/; ";
-//    ckie += "domain=" + document.location.host + "; ";
+    if (this.cookieDomain != null) {
+        ckie += "domain=" + this.cookieDomain + "; ";
+    }
     document.cookie = ckie;
 };
 
@@ -160,6 +162,10 @@ W1TTracker.prototype.push = function(command) {
 
     if (command[0] === "setSizeCapture") {
         this.sizeDetails = command[1] === "true" ? true : false;
+
+    /* Configuration */
+    } else if (command[0] === "setCookieDomain") {
+        this.cookieDomain = command[1];
 
     /* Visitor params */
     } else if (command[0] === "setVisitorParam") {
