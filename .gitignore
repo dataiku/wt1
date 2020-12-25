@@ -7,3 +7,4 @@ ivy
 bin
 .settings
 war-standalone/WEB-INF/config.properties
+.idea
