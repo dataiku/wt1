@@ -1,9 +1,0 @@
-lib
-build
-dist
-ivy
-.classpath
-.project
-bin
-.settings
-war-standalone/WEB-INF/config.properties
