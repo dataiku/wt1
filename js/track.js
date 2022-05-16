@@ -4,7 +4,7 @@
 /* global _wt1Q:true, console:false */
 /* jshint sub:true, eqnull:true */
 
-var trackURL =  "http://localhost:8080/wt1/public/p.gif";
+var trackURL =  "//localhost:8080/wt1/public/p.gif";
 var sessionLifetimeMinutes = 3;
 var visitorLifeTimeMinutes = 2 * 365 * 24 * 60;
 
